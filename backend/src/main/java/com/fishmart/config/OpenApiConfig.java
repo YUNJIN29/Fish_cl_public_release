@@ -1,0 +1,19 @@
+package com.fishmart.config;
+
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class OpenApiConfig {
+  @Bean
+  public OpenAPI openAPI() {
+    return new OpenAPI()
+        .info(new Info()
+            .title("水产病害知识平台 API")
+            .version("1.0.0")
+            .description("水产病害智能诊断与知识图谱平台接口文档"));
+  }
+}
+

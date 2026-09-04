@@ -1,0 +1,33 @@
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+.npm-cache/
+
+# Backend build output and runtime files
+backend/target/
+backend/uploads/
+backend/print-files/
+
+# Generated deployment archives
+*.tar
+*.tar.gz
+*.sql.gz
+*.dump
+*.bak
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.local.yml
+*.local.yaml
+
+# IDE and operating-system files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
