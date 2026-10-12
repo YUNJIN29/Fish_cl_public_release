@@ -2,10 +2,10 @@
   <div class="home-page">
     <!-- 头部 Slogan -->
     <div class="platform-hero">
-      <p class="hero-sub">AI 智能诊断 · RAG 知识检索 · 知识图谱可视化 · 蓝脉优选商城</p>
+      <p class="hero-sub">AI 智能诊断 · RAG 知识检索 · 知识图谱可视化 · 水产优选商城</p>
       <div class="hero-desc">
         面向水产养殖户、观赏鱼爱好者和水族店，解决“识病难、查药难、处理难、买药难”四大痛点，
-        构建从 AI 识病到蓝脉优选服务的完整闭环。
+        构建从 AI 识病到水产优选服务的完整闭环。
       </div>
     </div>
 
@@ -116,26 +116,18 @@
               <el-button type="primary" style="width:100%" @click="$router.push('/fish/diseases')">病害知识库</el-button>
               <el-button style="width:100%;margin-top:10px" @click="$router.push('/fish/rag')">RAG 知识检索</el-button>
               <el-button style="width:100%;margin-top:10px" @click="$router.push('/fish/knowledge-graph')">知识图谱全屏</el-button>
+              <el-button style="width:100%;margin-top:10px" @click="$router.push('/fish/calculator')">水体用量计算器</el-button>
+              <el-button style="width:100%;margin-top:10px" @click="$router.push('/fish/water-quality')">记录水质日志</el-button>
+              <el-button style="width:100%;margin-top:10px" @click="$router.push('/fish/tasks')">安排养殖待办</el-button>
             </div>
           </el-card>
         </el-col>
       </el-row>
     </section>
 
-    <!-- 第二部分：知识图谱 -->
+    <!-- 第二部分：知识图谱（按需进入，避免首页加载大型图谱运行时） -->
     <section class="home-section" id="knowledge-graph">
-      <el-card shadow="never">
-        <template #header>
-          <div class="section-hdr">
-            <div class="section-title">🕸️ 病害知识图谱</div>
-            <span class="section-sub">可视化展示病害、症状、治疗、地区间的关联关系</span>
-            <el-button link type="primary" @click="$router.push('/fish/knowledge-graph')">全屏探索 →</el-button>
-          </div>
-        </template>
-        <div class="kg-container">
-          <DiseaseGraphChart :height="700" :show-toolbar="false" chart-id="home-kg-chart" />
-        </div>
-      </el-card>
+      <div class="graph-cta"><div><small>KNOWLEDGE GRAPH</small><h2>把病害、症状与处理方案连成一张图</h2><p>图谱模块体积较大，仅在进入探索页后加载，以保持首页轻快。</p></div><el-button type="primary" size="large" @click="$router.push('/fish/knowledge-graph')">进入图谱探索 →</el-button></div>
     </section>
 
     <!-- 第三部分：科普与商城推荐 -->
@@ -188,7 +180,11 @@
 import { nextTick, onMounted, ref } from 'vue'
 import { http } from '@/utils/http'
 import { Picture } from '@element-plus/icons-vue'
-import DiseaseGraphChart from '@/components/DiseaseGraphChart.vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
+const router = useRouter()
 
 // --- 数据类型 ---
 type Message = { id: number; role: 'user' | 'assistant'; content: string; loading?: boolean }
@@ -271,6 +267,10 @@ async function scrollToBottom() {
 }
 
 async function sendMessage() {
+  if (!auth.token) {
+    await router.push({ name: 'login', query: { redirect: '/fish/diagnose' } })
+    return
+  }
   const text = inputText.value.trim()
   if (!text && !imagePreview.value) return
   if (sending.value) return
@@ -333,6 +333,7 @@ onMounted(() => {
 
 /* Sections */
 .home-section { margin-bottom: 32px; }
+.graph-cta{min-height:260px;display:flex;align-items:center;justify-content:space-between;gap:30px;padding:clamp(28px,5vw,64px);border:1px solid var(--c-border);border-radius:14px;background:radial-gradient(circle at 80% 20%,var(--c-cyan-dim),transparent 42%),var(--c-bg-card)}.graph-cta small{color:var(--c-cyan);letter-spacing:3px}.graph-cta h2{max-width:680px;font-size:clamp(26px,4vw,48px);margin:14px 0;color:var(--c-text)}.graph-cta p{color:var(--c-text-2)}
 .section-hdr { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .section-title { font-size: 18px; font-weight: 700; color: var(--c-text); }
 .section-sub { font-size: 13px; color: var(--c-text-2); flex: 1; }

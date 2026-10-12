@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /personal/me
+Disallow: /personal/print
+Sitemap: https://example.com/sitemap.xml

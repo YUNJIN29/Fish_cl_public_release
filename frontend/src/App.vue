@@ -1,9 +1,13 @@
 <template>
   <RouterView />
+  <CommandPalette />
+  <InstallPrompt />
 </template>
 
 <script setup lang="ts">
 import { useThemeStore } from '@/stores/theme'
+import CommandPalette from '@/components/CommandPalette.vue'
+import InstallPrompt from '@/components/InstallPrompt.vue'
 // 初始化主题（store 内部 watch 会立即应用）
 useThemeStore()
 </script>
@@ -435,17 +439,6 @@ html.dark .el-page-header__breadcrumb { color: var(--c-text-2); }
 .portal .footer-line a { color:#71869e; text-decoration:none; }
 .portal .footer-line a:hover { color:#00d4ff; }
 .portal footer p { max-width:920px; margin:8px auto 0; color:#40546b; line-height:1.7; letter-spacing:0; }
-.portal.portal { background:#f4f7fc !important; color:#10233e !important; }
-.portal .glow { opacity:.09 !important; }
-.portal header { color:#60758e !important; }
-.portal header b { background:#fff; }
-.portal .intro h1 { color:#10233e; }
-.portal .intro p, .portal .choice p { color:#657b94 !important; }
-.portal .choice { background:#fff !important; border-color:#dbe5f1 !important; box-shadow:0 10px 35px rgba(35,75,120,.07); }
-.portal .choice em { color:#dce7f3 !important; }
-.portal .choice h2 { color:#10233e; }
-.portal footer { color:#52677f !important; font-size:14px !important; letter-spacing:0 !important; }
-.portal footer p { color:#60758e; font-size:13px; }
 .games-page .snake,.games-page .xo{display:grid;place-items:center;font-size:26px;font-weight:800;line-height:1.7}.games-page .snake span{color:var(--c-green);letter-spacing:4px}.games-page .snake b{color:var(--c-red);margin-left:100px}.games-page .xo span{color:var(--c-purple)}
 .games-page .casual-icon{display:grid;place-items:center;font-size:48px;letter-spacing:8px}
 .portal .ranking{max-width:760px;margin:0 auto 8px;padding:18px 22px;background:#fff;border:1px solid #dbe5f1;border-radius:16px}.portal .ranking-title{text-align:center;margin-bottom:12px}.portal .ranking-title span{font-size:9px;letter-spacing:3px;color:#7667ed}.portal .ranking-title h3{margin:5px 0;font-size:18px}.portal .ranking-list{display:grid;gap:5px}.portal .rank-row{display:grid;grid-template-columns:28px 120px 1fr 65px;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;background:#f7f9fd;font-size:12px}.portal .rank-row>b{color:#7667ed}.portal .rank-row code{color:#37536f}.portal .rank-row span{color:#71869d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.portal .rank-row strong{text-align:right;color:#087eb4}.portal .ranking-list>p{text-align:center;color:#71869d}@media(max-width:720px){.portal .ranking{padding:15px 10px}.portal .rank-row{grid-template-columns:22px 92px 1fr 52px;gap:5px;padding:7px 5px;font-size:11px}}

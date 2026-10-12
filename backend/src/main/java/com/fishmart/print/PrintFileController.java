@@ -20,10 +20,12 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/print")
 public class PrintFileController {
+  private static final Set<String> ALLOWED_EXTENSIONS = Set.of("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "jpg", "jpeg", "png");
   private final AppProperties props;
 
   public PrintFileController(AppProperties props) {
@@ -55,6 +57,10 @@ public class PrintFileController {
     Files.createDirectories(dir);
 
     String original = StringUtils.cleanPath(file.getOriginalFilename() == null ? "file" : file.getOriginalFilename());
+    String extension = StringUtils.getFilenameExtension(original);
+    if (extension == null || !ALLOWED_EXTENSIONS.contains(extension.toLowerCase())) {
+      throw new BizException("不支持该打印文件格式");
+    }
     String safeName = original.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
     if (safeName.isBlank() || safeName.contains("..")) {
       safeName = "file";

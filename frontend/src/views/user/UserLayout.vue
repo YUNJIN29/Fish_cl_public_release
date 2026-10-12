@@ -4,17 +4,20 @@
       <!-- 品牌 Logo -->
       <div class="brand" @click="$router.push('/fish')">
         <span class="brand-icon">◈</span>
-        <span class="brand-text">水产智诊</span>
+        <span class="brand-text">Aquatic Lab</span>
         <span class="brand-badge">V1.0</span>
       </div>
 
-      <el-menu mode="horizontal" :default-active="active" router class="menu">
+      <button class="mobile-menu-toggle" :aria-expanded="mobileOpen" aria-label="打开主导航" @click="mobileOpen = !mobileOpen">{{ mobileOpen ? '×' : '☰' }}</button>
+
+      <el-menu mode="horizontal" :default-active="active" router class="menu" :class="{ 'mobile-open': mobileOpen }" @select="mobileOpen = false">
         <el-menu-item index="/fish">首页</el-menu-item>
         <el-menu-item index="/fish/diseases">病害知识库</el-menu-item>
         <el-menu-item index="/fish/diagnose">AI智能诊断</el-menu-item>
         <el-menu-item index="/fish/rag">RAG检索</el-menu-item>
         <el-menu-item index="/fish/knowledge-graph">知识图谱</el-menu-item>
-        <el-menu-item index="/fish/products">蓝脉优选</el-menu-item>
+        <el-sub-menu index="/fish/tools"><template #title>日常工具</template><el-menu-item index="/fish/calculator">用量计算器</el-menu-item><el-menu-item index="/fish/water-quality">水质日志</el-menu-item><el-menu-item index="/fish/tasks">养殖待办</el-menu-item></el-sub-menu>
+        <el-menu-item index="/fish/products">水产优选</el-menu-item>
         <el-menu-item index="/fish/articles">科普学习</el-menu-item>
         <el-menu-item index="/fish/posts">交流社区</el-menu-item>
       </el-menu>
@@ -23,11 +26,11 @@
         <div class="quick-links" aria-label="快捷入口">
           <el-button class="quick-link" size="small" @click="go('/personal/me')">个人</el-button>
           <el-button class="quick-link" size="small" @click="go('/personal/games')">游戏</el-button>
-          <el-button class="quick-link active" size="small" @click="go('/fish')">水产平台</el-button>
+          <el-button class="quick-link active" size="small" @click="go('/fish')">水产智诊平台</el-button>
         </div>
 
         <!-- 日/夜模式切换 -->
-        <button class="theme-toggle" @click="theme.toggle" :title="theme.isDark ? '切换日间模式' : '切换夜间模式'">
+        <button class="theme-toggle" @click="theme.toggle" :title="theme.isDark ? '切换日间模式' : '切换夜间模式'" :aria-label="theme.isDark ? '切换日间模式' : '切换夜间模式'">
           <span class="theme-track" :class="{ dark: theme.isDark }">
             <span class="theme-thumb">{{ theme.isDark ? '🌙' : '☀️' }}</span>
           </span>
@@ -39,7 +42,7 @@
           <el-dropdown>
             <span class="user-btn">
               <span class="user-dot" />
-              {{ auth.me?.nickname || auth.me?.username }}
+              <span class="user-name">{{ auth.me?.nickname || auth.me?.username }}</span>
               <span class="arrow">▾</span>
             </span>
             <template #dropdown>
@@ -73,14 +76,14 @@
         <span>学习科研与课程/竞赛原型项目</span>
       </div>
       <div class="footer-note">
-        公开版本已移除个人联系方式、备案信息、服务器地址和私有部署脚本。请在自己的环境中配置数据库、密钥和部署信息。
+        该 Web 网站为自主研发项目，主要服务于本人日常专业知识学习，用于完成课程学习内容、开展科创比赛项目搭建、完成学术论文的试验数据分析、文献整理与课题研究工作。网站仅本人内部使用，仅用于学习科研和竞赛项目，禁止用于商业盈利，不对外开放商用服务。
       </div>
     </footer>
   </el-container>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
@@ -89,6 +92,7 @@ const auth = useAuthStore()
 const theme = useThemeStore()
 const route = useRoute()
 const router = useRouter()
+const mobileOpen = ref(false)
 
 const active = computed(() => route.path)
 const isAdmin = computed(() => auth.me?.roles?.includes('ADMIN') ?? false)
@@ -154,6 +158,7 @@ function logout() { auth.logout(); router.push('/fish') }
 
 /* 菜单 */
 .menu { flex: 1; background: transparent !important; border-bottom: none !important; }
+.mobile-menu-toggle{display:none;min-width:44px;min-height:44px;border:1px solid var(--c-border);border-radius:8px;background:var(--c-bg-card);color:var(--c-text);font-size:20px}
 .menu-disease { color: inherit; }
 
 /* 主题切换开关 */
@@ -304,9 +309,17 @@ function logout() { auth.logout(); router.push('/fish') }
   color: var(--c-text-3);
   opacity: 0.78;
 }
-@media (max-width: 1180px) {
+@media (max-width: 1380px) {
   .quick-links {
     display: none;
   }
+  .switch-site { display: none; }
+  .menu :deep(.el-menu-item) { padding: 0 10px; }
+}
+@media (max-width: 860px) {
+  .header{padding:0 12px;gap:8px}.mobile-menu-toggle{display:block}.menu{display:none;position:fixed;left:12px;right:12px;top:66px;height:auto!important;padding:8px!important;border:1px solid var(--c-border)!important;border-radius:12px;background:var(--c-bg-card)!important;box-shadow:0 18px 50px rgba(0,0,0,.28)}.menu.mobile-open{display:block}.menu.el-menu--horizontal{flex-direction:column;align-items:stretch}.menu :deep(.el-menu-item),.menu :deep(.el-sub-menu__title){min-height:44px;height:44px;line-height:44px}.switch-site{display:none}.theme-toggle{margin-right:0}.right{margin-left:auto}
+}
+@media (max-width: 430px) {
+  .header{gap:6px;padding:0 8px}.brand-badge{display:none}.brand-text{font-size:16px}.right{gap:5px}.user-btn{min-width:44px;justify-content:center;padding:6px 9px}.user-name{display:none}.theme-track{width:46px}.theme-track.dark .theme-thumb{transform:translateX(20px)}
 }
 </style>

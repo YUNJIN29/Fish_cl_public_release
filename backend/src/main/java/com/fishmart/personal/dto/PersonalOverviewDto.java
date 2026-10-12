@@ -3,6 +3,7 @@ package com.fishmart.personal.dto;
 import com.fishmart.content.dto.PostDto;
 import com.fishmart.diagnose.dto.DiagnoseRecordDto;
 import com.fishmart.order.dto.OrderDto;
+import com.fishmart.task.AquacultureTaskDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -16,6 +17,9 @@ public class PersonalOverviewDto {
   private List<DiagnoseRecordDto> recentDiagnoses;
   private List<OrderDto> recentOrders;
   private List<PostDto> recentPosts;
+  private List<DiagnosisAttentionDto> attentionDiagnoses;
+  private List<WaterQualityAttentionDto> attentionWaterQuality;
+  private List<AquacultureTaskDto> upcomingTasks;
 
   @Data
   @AllArgsConstructor
@@ -24,5 +28,6 @@ public class PersonalOverviewDto {
     private long orderCount;
     private long postCount;
     private long favoriteCount;
+    private long openTaskCount;
   }
 }

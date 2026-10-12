@@ -4,6 +4,9 @@ import com.fishmart.diagnose.DiagnoseRecord;
 import lombok.Data;
 
 import java.time.Instant;
+import java.util.List;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Data
 public class DiagnoseRecordDto {
@@ -16,6 +19,14 @@ public class DiagnoseRecordDto {
   private String duration;
   private String imageUrl;
   private Instant createdAt;
+  private String confidence;
+  private List<String> evidence;
+  private List<String> sources;
+  private List<String> warnings;
+  private List<String> nextSteps;
+  private boolean legacyFormat;
+
+  private static final ObjectMapper JSON = new ObjectMapper();
 
   public static DiagnoseRecordDto from(DiagnoseRecord record) {
     DiagnoseRecordDto dto = new DiagnoseRecordDto();
@@ -28,6 +39,18 @@ public class DiagnoseRecordDto {
     dto.duration = record.getDuration();
     dto.imageUrl = record.getImageUrl();
     dto.createdAt = record.getCreatedAt();
+    dto.confidence = record.getConfidence();
+    dto.evidence = readList(record.getEvidenceJson());
+    dto.sources = readList(record.getSourcesJson());
+    dto.warnings = readList(record.getWarningsJson());
+    dto.nextSteps = readList(record.getNextStepsJson());
+    dto.legacyFormat = record.getConfidence() == null;
     return dto;
+  }
+
+  private static List<String> readList(String value) {
+    if (value == null || value.isBlank()) return List.of();
+    try { return JSON.readValue(value, new TypeReference<>() {}); }
+    catch (Exception ignored) { return List.of(); }
   }
 }

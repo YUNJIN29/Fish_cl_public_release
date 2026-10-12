@@ -77,7 +77,7 @@ public class RagDataInitializer implements CommandLineRunner {
         ),
         doc(
             "草鱼出血病问诊要点",
-            "水产病害知识库",
+            "水产智诊平台知识库",
             "internal://diseases/grass-carp-hemorrhage",
             "本地知识条目",
             "中文",
@@ -88,7 +88,7 @@ public class RagDataInitializer implements CommandLineRunner {
         ),
         doc(
             "白点病与水霉病鉴别",
-            "水产病害知识库",
+            "水产智诊平台知识库",
             "internal://diseases/white-spot-saprolegnia",
             "本地知识条目",
             "中文",
@@ -99,7 +99,7 @@ public class RagDataInitializer implements CommandLineRunner {
         ),
         doc(
             "烂鳃、浮头与水质应激问诊要点",
-            "水产病害知识库",
+            "水产智诊平台知识库",
             "internal://diseases/gill-water-quality",
             "本地知识条目",
             "中文",

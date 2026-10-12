@@ -1,4 +1,4 @@
 package com.fishmart.game;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.*;
-public interface GameScoreRepository extends JpaRepository<GameScore,Long>{Optional<GameScore> findByGameKeyAndIpAddress(String gameKey,String ipAddress);List<GameScore> findTop10ByGameKeyOrderByScoreDescUpdatedAtAsc(String gameKey);}
+public interface GameScoreRepository extends JpaRepository<GameScore,Long>{Optional<GameScore> findByGameKeyAndUserId(String gameKey,Long userId);List<GameScore> findTop10ByGameKeyAndUserIsNotNullOrderByScoreDescUpdatedAtAsc(String gameKey);}

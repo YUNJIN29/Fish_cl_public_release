@@ -16,14 +16,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
   @Override
   public void addResourceHandlers(ResourceHandlerRegistry registry) {
-    Path uploadDir = Path.of(props.getUpload().getDir()).toAbsolutePath().normalize();
-    registry.addResourceHandler("/uploads/**").addResourceLocations(directoryLocation(uploadDir));
-
     Path printDir = Path.of(props.getPrint().getDir()).toAbsolutePath().normalize();
     registry.addResourceHandler("/print-files/**").addResourceLocations(directoryLocation(printDir));
 
-    Path diagnoseImageDir = Path.of(props.getDiagnoseImage().getDir()).toAbsolutePath().normalize();
-    registry.addResourceHandler("/diagnose-images/**").addResourceLocations(directoryLocation(diagnoseImageDir));
   }
 
   private String directoryLocation(Path dir) {

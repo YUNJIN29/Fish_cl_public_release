@@ -150,7 +150,7 @@ CREATE TABLE favorites (
 -- ===== 种子数据（演示用）=====
 INSERT INTO roles(name) VALUES ('USER'), ('ADMIN');
 
--- 管理员账号由后端启动器按 ADMIN_USERNAME / ADMIN_PASSWORD 环境变量创建；这里不写死账号口令
+-- bcrypt(replace_with_a_strong_admin_password) 由后端启动器自动创建 admin 账号；这里不写死 hash，避免不同环境不一致
 
 INSERT INTO categories(name, sort_order) VALUES
 ('孔雀鱼', 10),

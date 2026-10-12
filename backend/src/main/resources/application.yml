@@ -17,10 +17,21 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 20MB
+  flyway:
+    enabled: false
 
 logging:
   level:
     org.hibernate.SQL: info
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
 
 springdoc:
   swagger-ui:
@@ -28,15 +39,21 @@ springdoc:
 
 app:
   jwt:
-    issuer: "${JWT_ISSUER:bluemap}"
+    issuer: "${JWT_ISSUER:aquatic-platform}"
     secret: "${JWT_SECRET:}"
     accessTokenMinutes: "${JWT_ACCESS_TOKEN_MINUTES:240}"
   upload:
     dir: uploads
+  private-upload:
+    dir: "${PRIVATE_UPLOAD_DIR:private-uploads}"
   print:
     dir: print-files
   diagnose-image:
     dir: diagnose-images
+  retention:
+    visits-days: "${VISIT_RETENTION_DAYS:90}"
+    diagnoses-days: "${DIAGNOSIS_RETENTION_DAYS:90}"
+    print-files-days: "${PRINT_FILE_RETENTION_DAYS:7}"
   cors:
     allowedOrigins:
       - "http://localhost:5173"

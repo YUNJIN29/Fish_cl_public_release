@@ -14,7 +14,7 @@
   <artifactId>bluemap-backend</artifactId>
   <version>0.1.0</version>
   <name>bluemap-backend</name>
-  <description>水产病害智能诊断与知识图谱平台后端</description>
+  <description>水产智诊平台：水产病害智能诊断与知识图谱平台后端</description>
 
   <properties>
     <java.version>17</java.version>
@@ -38,6 +38,18 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-mysql</artifactId>
     </dependency>
 
     <dependency>

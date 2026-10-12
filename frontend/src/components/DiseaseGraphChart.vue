@@ -26,11 +26,11 @@
       <div class="view-hint">{{ activeViewHint }}</div>
     </div>
 
-    <div v-if="showToolbar && rawData" class="stat-strip">
-      <div><strong>{{ rawData.stats?.diseaseCount || diseaseNodes.length }}</strong><span>病害</span></div>
+    <div v-if="showToolbar" class="stat-strip">
+      <div><strong>{{ rawStats.diseaseCount || diseaseNodes.length }}</strong><span>病害</span></div>
       <div><strong>{{ currentNodes.length }}</strong><span>当前节点</span></div>
       <div><strong>{{ currentLinks.length }}</strong><span>当前关系</span></div>
-      <div><strong>{{ rawData.stats?.relatedDiseaseLinkCount || relatedDiseaseLinks.length }}</strong><span>病害关联</span></div>
+      <div><strong>{{ rawStats.relatedDiseaseLinkCount || relatedDiseaseLinks.length }}</strong><span>病害关联</span></div>
     </div>
 
     <div v-if="tagList.length > 0" class="tag-panel">
@@ -47,7 +47,7 @@
           </span>
         </div>
         <el-skeleton v-if="loading" :rows="6" animated :style="`height:${height}px`" />
-        <div v-show="!loading" :id="chartId" :style="`width:100%;height:${height}px`" />
+        <div ref="chartEl" v-show="!loading" :id="chartId" class="graph-canvas" :style="`height:${height}px`" role="img" :aria-label="`水产病害知识图谱，当前显示 ${currentNodes.length} 个节点和 ${currentLinks.length} 条关系`" />
         <div v-if="error" class="error-tip">图谱数据加载失败，请检查后端服务是否启动。</div>
       </div>
 
@@ -104,14 +104,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, nextTick, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, nextTick, ref, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
-import * as echarts from 'echarts'
+import * as echarts from 'echarts/core'
+import { GraphChart } from 'echarts/charts'
+import { LegendComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+import type { EChartsType } from 'echarts/core'
 import axios from 'axios'
 import { DataAnalysis, Download, Refresh, Search, Share } from '@element-plus/icons-vue'
 
 const rawAxios = axios.create({ baseURL: '' })
 const router = useRouter()
+echarts.use([GraphChart, LegendComponent, TooltipComponent, CanvasRenderer])
 
 const props = withDefaults(defineProps<{
   height?: number
@@ -155,6 +160,7 @@ const viewMode = ref('all')
 const layoutMode = ref('force')
 const showRelationLabel = ref(false)
 const selectedNode = ref<GraphNode | null>(null)
+const chartEl = ref<HTMLElement | null>(null)
 const currentNodes = ref<GraphNode[]>([])
 const currentLinks = ref<GraphLink[]>([])
 
@@ -167,15 +173,18 @@ const viewOptions = [
   { label: '病害关联', value: 'disease' },
 ]
 
-let chart: echarts.ECharts | null = null
-let rawData: GraphData | null = null
+let chart: EChartsType | null = null
+const rawData = shallowRef<GraphData | null>(null)
+let resizeObserver: ResizeObserver | null = null
+let resizeFrame = 0
+const rawStats = computed(() => rawData.value?.stats || { diseaseCount: 0, relatedDiseaseLinkCount: 0 })
 
-const categoryOptions = computed(() => rawData?.categories.map((c) => c.name) || [])
-const diseaseNodes = computed(() => rawData?.nodes.filter((node) => categoryName(node.category) === '病害') || [])
-const relatedDiseaseLinks = computed(() => rawData?.links.filter((link) => link.relationType === '病害关联') || [])
+const categoryOptions = computed(() => rawData.value?.categories.map((c) => c.name) || [])
+const diseaseNodes = computed(() => rawData.value?.nodes.filter((node) => categoryName(node.category) === '病害') || [])
+const relatedDiseaseLinks = computed(() => rawData.value?.links.filter((link) => link.relationType === '病害关联') || [])
 const selectedDegree = computed(() => {
-  if (!selectedNode.value || !rawData) return 0
-  return rawData.links.filter((link) => link.source === selectedNode.value?.id || link.target === selectedNode.value?.id).length
+  if (!selectedNode.value || !rawData.value) return 0
+  return rawData.value.links.filter((link) => link.source === selectedNode.value?.id || link.target === selectedNode.value?.id).length
 })
 const relationLegend = [
   { label: '病害关联', color: '#f2b84b' },
@@ -189,25 +198,25 @@ const activeViewHint = computed(() => {
   return '拖拽节点、滚轮缩放；点击病害可在右侧查看症状、处理和相关疾病。'
 })
 const relatedNodes = computed(() => {
-  if (!selectedNode.value || !rawData) return []
+  if (!selectedNode.value || !rawData.value) return []
   const ids = new Set<string>()
-  rawData.links
+  rawData.value.links
       .filter((link) => link.relationType === '病害关联')
       .forEach((link) => {
         if (link.source === selectedNode.value?.id) ids.add(link.target)
         if (link.target === selectedNode.value?.id) ids.add(link.source)
       })
-  return rawData.nodes.filter((node) => ids.has(node.id)).slice(0, 8)
+  return rawData.value.nodes.filter((node) => ids.has(node.id)).slice(0, 8)
 })
 const selectedRelationRows = computed(() => {
-  if (!selectedNode.value || !rawData) return []
+  if (!selectedNode.value || !rawData.value) return []
   const rows: Array<{ relation: string; node: GraphNode }> = []
-  rawData.links
+  rawData.value.links
       .filter((link) => link.source === selectedNode.value?.id || link.target === selectedNode.value?.id)
       .slice(0, 14)
       .forEach((link) => {
         const otherId = link.source === selectedNode.value?.id ? link.target : link.source
-        const node = rawData?.nodes.find((item) => item.id === otherId)
+        const node = rawData.value?.nodes.find((item) => item.id === otherId)
         if (node) rows.push({ relation: link.name || link.value || '关联', node })
       })
   return rows
@@ -219,16 +228,16 @@ async function fetchData(): Promise<GraphData> {
 }
 
 function renderGraph() {
-  if (!rawData) return
-  const filtered = filterGraph(rawData.nodes, rawData.links)
+  if (!rawData.value) return
+  const filtered = filterGraph(rawData.value.nodes, rawData.value.links)
   currentNodes.value = filtered.nodes
   currentLinks.value = filtered.links
   draw(filtered.nodes, filtered.links)
 }
 
 function draw(nodes: GraphNode[], links: GraphLink[]) {
-  const dom = document.getElementById(props.chartId)
-  if (!dom || !rawData) return
+  const dom = chartEl.value
+  if (!dom || !rawData.value) return
   if (chart) chart.dispose()
 
   chart = echarts.init(dom, 'dark')
@@ -290,7 +299,7 @@ function draw(nodes: GraphNode[], links: GraphLink[]) {
     },
     legend: [{
       type: 'scroll',
-      data: rawData.categories.map((c) => c.name),
+      data: rawData.value.categories.map((c) => c.name),
       top: 12,
       right: 12,
       orient: 'vertical',
@@ -316,7 +325,7 @@ function draw(nodes: GraphNode[], links: GraphLink[]) {
       draggable: true,
       data: styledNodes,
       links: styledLinks,
-      categories: rawData.categories,
+      categories: rawData.value.categories,
       label: { show: true },
       edgeLabel: {
         show: showRelationLabel.value,
@@ -338,6 +347,7 @@ function draw(nodes: GraphNode[], links: GraphLink[]) {
   chart.on('click', (params: any) => {
     if (params.dataType === 'node') selectedNode.value = params.data
   })
+  scheduleResize()
 }
 
 function filterGraph(nodes: GraphNode[], links: GraphLink[]) {
@@ -349,7 +359,7 @@ function filterGraph(nodes: GraphNode[], links: GraphLink[]) {
     }
   }
   if (!activeCategory.value) return { nodes, links }
-  const categoryIndexValue = rawData?.categories.findIndex((cat) => cat.name === activeCategory.value)
+  const categoryIndexValue = rawData.value?.categories.findIndex((cat) => cat.name === activeCategory.value)
   const ids = new Set<string>()
   nodes.forEach((node) => {
     if (node.category === categoryIndexValue || categoryName(node.category) === '病害') ids.add(node.id)
@@ -372,13 +382,13 @@ function applyFilters() {
 }
 
 function onSearch() {
-  if (!rawData) return
+  if (!rawData.value) return
   const val = searchVal.value.trim()
   if (!val) {
     resetGraph()
     return
   }
-  const matched = rawData.nodes
+  const matched = rawData.value.nodes
       .filter((node) => node.name.includes(val) || node.value?.includes(val) || node.description?.includes(val))
       .map((node) => node.name)
   tagList.value = matched.slice(0, 24)
@@ -386,17 +396,17 @@ function onSearch() {
 }
 
 function focusNode(keyword: string) {
-  if (!rawData) return
-  const target = rawData.nodes.find((node) => node.name === keyword)
+  if (!rawData.value) return
+  const target = rawData.value.nodes.find((node) => node.name === keyword)
   if (!target) return
   selectedNode.value = target
   const relIds = new Set<string>([target.id])
-  rawData.links.forEach((link) => {
+  rawData.value.links.forEach((link) => {
     if (link.source === target.id) relIds.add(link.target)
     if (link.target === target.id) relIds.add(link.source)
   })
-  currentNodes.value = rawData.nodes.filter((node) => relIds.has(node.id))
-  currentLinks.value = rawData.links.filter((link) => relIds.has(link.source) && relIds.has(link.target))
+  currentNodes.value = rawData.value.nodes.filter((node) => relIds.has(node.id))
+  currentLinks.value = rawData.value.links.filter((link) => relIds.has(link.source) && relIds.has(link.target))
   draw(currentNodes.value, currentLinks.value)
 }
 
@@ -428,7 +438,7 @@ function exportImage() {
 }
 
 function categoryName(index?: number) {
-  return rawData?.categories[index || 0]?.name || '节点'
+  return rawData.value?.categories[index || 0]?.name || '节点'
 }
 
 function nodeSize(node: GraphNode) {
@@ -455,15 +465,27 @@ function linkColor(link: GraphLink) {
 }
 
 function onResize() {
-  chart?.resize()
+  scheduleResize()
+}
+
+function scheduleResize() {
+  cancelAnimationFrame(resizeFrame)
+  resizeFrame = requestAnimationFrame(() => {
+    const dom = chartEl.value
+    if (!chart || !dom || dom.clientWidth < 1 || dom.clientHeight < 1) return
+    chart.resize({ width: dom.clientWidth, height: dom.clientHeight })
+  })
 }
 
 onMounted(async () => {
   try {
-    rawData = await fetchData()
+    rawData.value = await fetchData()
     loading.value = false
     await nextTick()
     renderGraph()
+    resizeObserver = new ResizeObserver(scheduleResize)
+    if (chartEl.value) resizeObserver.observe(chartEl.value)
+    requestAnimationFrame(() => requestAnimationFrame(scheduleResize))
   } catch (e) {
     console.error('[KG] fetch error', e)
     loading.value = false
@@ -474,6 +496,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onResize)
+  resizeObserver?.disconnect()
+  cancelAnimationFrame(resizeFrame)
   chart?.dispose()
 })
 </script>
@@ -481,6 +505,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .graph-shell {
   width: 100%;
+  min-width: 0;
 }
 .graph-toolbar {
   display: flex;
@@ -561,6 +586,8 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
   gap: 14px;
+  width: 100%;
+  min-width: 0;
 }
 .graph-workspace.compact {
   display: block;
@@ -574,8 +601,15 @@ onBeforeUnmount(() => {
 }
 .chart-wrap {
   position: relative;
+  min-width: 0;
+  width: 100%;
   min-height: 420px;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+}
+.graph-canvas {
+  display: block;
+  width: 100%;
+  min-width: 0;
 }
 .graph-legend {
   position: absolute;

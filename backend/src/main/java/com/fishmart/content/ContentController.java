@@ -10,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -96,6 +97,24 @@ public class ContentController {
     boolean favored = contentService.toggleFavorite(u.getId(), targetType, targetId);
     long count = favRepo.countByTargetTypeAndTargetId(targetType, targetId);
     return ApiResponse.ok(Map.of("favored", favored, "count", count));
+  }
+
+  @GetMapping("/favorites")
+  public ApiResponse<Page<FavoriteItemDto>> favorites(Authentication authentication,
+                                                       @RequestParam(required = false) TargetType targetType,
+                                                       @RequestParam(defaultValue = "0") int page,
+                                                       @RequestParam(defaultValue = "12") int size) {
+    AuthUser u = (AuthUser) authentication.getPrincipal();
+    PageRequest pr = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 50));
+    return ApiResponse.ok(contentService.listFavorites(u.getId(), targetType, pr));
+  }
+
+  @GetMapping("/engagement")
+  public ApiResponse<Map<Long, EngagementDto>> engagement(Authentication authentication,
+                                                           @RequestParam TargetType targetType,
+                                                           @RequestParam List<Long> targetIds) {
+    Long userId = authentication != null && authentication.getPrincipal() instanceof AuthUser u ? u.getId() : null;
+    return ApiResponse.ok(contentService.engagement(targetType, targetIds, userId));
   }
 }
 

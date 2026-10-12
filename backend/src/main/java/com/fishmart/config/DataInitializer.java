@@ -14,13 +14,11 @@ public class DataInitializer implements CommandLineRunner {
   private final String adminUsername;
   private final String adminPassword;
 
-  public DataInitializer(
-      RoleRepository roleRepo,
-      UserRepository userRepo,
-      PasswordEncoder passwordEncoder,
-      @Value("${app.admin.username:admin}") String adminUsername,
-      @Value("${app.admin.password:}") String adminPassword
-  ) {
+  public DataInitializer(RoleRepository roleRepo,
+                         UserRepository userRepo,
+                         PasswordEncoder passwordEncoder,
+                         @Value("${app.admin.username:admin}") String adminUsername,
+                         @Value("${app.admin.password:}") String adminPassword) {
     this.roleRepo = roleRepo;
     this.userRepo = userRepo;
     this.passwordEncoder = passwordEncoder;
@@ -41,9 +39,7 @@ public class DataInitializer implements CommandLineRunner {
       return roleRepo.save(r);
     });
 
-    if (adminPassword == null || adminPassword.isBlank()) {
-      return;
-    }
+    if (adminPassword == null || adminPassword.isBlank()) return;
 
     userRepo.findByUsername(adminUsername).orElseGet(() -> {
       User u = new User();

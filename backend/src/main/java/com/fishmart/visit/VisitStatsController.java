@@ -5,7 +5,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import java.time.*;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/visits")
@@ -16,12 +15,11 @@ public class VisitStatsController {
 
   public VisitStatsController(DailyVisitRepository repository, IpLocationService locationService) { this.repository = repository; this.locationService = locationService; }
 
-  public record VisitStats(long todayVisitors, long monthVisitors, long thisIpVisits) {}
-  public record RankingItem(String ip, String location, long visits) {}
+  public record VisitSummary(long todayVisitors, long monthVisitors, long totalVisitors) {}
 
-  @RequestMapping(value = "/track", method = {RequestMethod.POST, RequestMethod.GET})
+  @PostMapping("/track")
   @Transactional
-  public ApiResponse<VisitStats> track(HttpServletRequest request) {
+  public ApiResponse<VisitSummary> track(HttpServletRequest request) {
     LocalDate today = LocalDate.now(ZONE);
     String ip = clientIp(request);
     DailyVisit visit = repository.findByVisitDateAndIpAddress(today, ip).orElseGet(() -> {
@@ -35,28 +33,22 @@ public class VisitStatsController {
     if (visit.getLocation() == null || visit.getLocation().isBlank()) visit.setLocation(locationService.resolve(ip));
     visit.setLastVisitedAt(Instant.now());
     repository.saveAndFlush(visit);
-    return ApiResponse.ok(stats(today, visit.getVisitCount()));
+    return ApiResponse.ok(summary(today));
   }
 
-  @GetMapping("/stats")
-  public ApiResponse<VisitStats> stats() {
+  @GetMapping("/summary")
+  public ApiResponse<VisitSummary> summary() {
     LocalDate today = LocalDate.now(ZONE);
-    return ApiResponse.ok(stats(today, 0));
+    return ApiResponse.ok(summary(today));
   }
 
-  @GetMapping("/monthly-ranking")
-  public ApiResponse<List<RankingItem>> monthlyRanking() {
-    LocalDate today = LocalDate.now(ZONE);
-    List<RankingItem> result = repository.monthlyRanking(today.withDayOfMonth(1), today).stream()
-        .limit(10)
-        .map(row -> new RankingItem(maskIp(String.valueOf(row[0])), row[1] == null ? "未知地区" : String.valueOf(row[1]), ((Number) row[2]).longValue()))
-        .toList();
-    return ApiResponse.ok(result);
-  }
-
-  private VisitStats stats(LocalDate today, long thisIpVisits) {
+  private VisitSummary summary(LocalDate today) {
     LocalDate monthStart = today.withDayOfMonth(1);
-    return new VisitStats(repository.countByVisitDate(today), repository.countUniqueIpsBetween(monthStart, today), thisIpVisits);
+    return new VisitSummary(
+        repository.countByVisitDate(today),
+        repository.countUniqueIpsBetween(monthStart, today),
+        repository.countAllUniqueIps()
+    );
   }
 
   private String clientIp(HttpServletRequest request) {
@@ -66,17 +58,4 @@ public class VisitStatsController {
     return real != null && !real.isBlank() ? real.trim() : request.getRemoteAddr();
   }
 
-  private String maskIp(String ip) {
-    if (ip.contains(".")) {
-      String[] parts = ip.split("\\.");
-      return parts.length == 4 ? parts[0] + "." + parts[1] + ".*.*" : "*.*";
-    }
-    String[] parts = ip.split(":", -1);
-    if (parts.length > 2) {
-      parts[parts.length - 1] = "*";
-      parts[parts.length - 2] = "*";
-      return String.join(":", parts);
-    }
-    return "*:*";
-  }
 }

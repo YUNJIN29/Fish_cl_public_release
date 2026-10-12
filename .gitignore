@@ -1,12 +1,18 @@
 # Frontend dependencies and build output
 frontend/node_modules/
 frontend/dist/
+frontend/.plan-dist/
+frontend/.verify-dist*/
+frontend/test-results/
+frontend/playwright-report/
 .npm-cache/
 
 # Backend build output and runtime files
 backend/target/
 backend/uploads/
 backend/print-files/
+backend/private-uploads/
+backend/diagnose-images/
 
 # Generated deployment archives
 *.tar

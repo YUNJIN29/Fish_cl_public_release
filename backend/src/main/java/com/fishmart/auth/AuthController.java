@@ -1,6 +1,7 @@
 package com.fishmart.auth;
 
 import com.fishmart.auth.dto.AuthResponse;
+import com.fishmart.auth.dto.ChangePasswordRequest;
 import com.fishmart.auth.dto.LoginRequest;
 import com.fishmart.auth.dto.RegisterRequest;
 import com.fishmart.auth.dto.UpdateProfileRequest;
@@ -40,6 +41,14 @@ public class AuthController {
                                                         @Valid @RequestBody UpdateProfileRequest req) {
     AuthUser principal = (AuthUser) authentication.getPrincipal();
     return ApiResponse.ok(authService.updateProfile(principal, req));
+  }
+
+  @PostMapping("/change-password")
+  public ApiResponse<Void> changePassword(Authentication authentication,
+                                          @Valid @RequestBody ChangePasswordRequest req) {
+    AuthUser principal = (AuthUser) authentication.getPrincipal();
+    authService.changePassword(principal, req);
+    return ApiResponse.ok("密码已更新", null);
   }
 }
 

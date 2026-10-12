@@ -13,8 +13,10 @@ import java.util.List;
 public class AppProperties {
   private Jwt jwt = new Jwt();
   private Upload upload = new Upload();
+  private PrivateUpload privateUpload = new PrivateUpload();
   private Print print = new Print();
   private DiagnoseImage diagnoseImage = new DiagnoseImage();
+  private Retention retention = new Retention();
   private Cors cors = new Cors();
   private Ai ai = new Ai();
 
@@ -31,6 +33,11 @@ public class AppProperties {
   }
 
   @Data
+  public static class PrivateUpload {
+    private String dir = "private-uploads";
+  }
+
+  @Data
   public static class Print {
     private String dir = "print-files";
   }
@@ -38,6 +45,13 @@ public class AppProperties {
   @Data
   public static class DiagnoseImage {
     private String dir = "diagnose-images";
+  }
+
+  @Data
+  public static class Retention {
+    private int visitsDays = 90;
+    private int diagnosesDays = 90;
+    private int printFilesDays = 7;
   }
 
   @Data

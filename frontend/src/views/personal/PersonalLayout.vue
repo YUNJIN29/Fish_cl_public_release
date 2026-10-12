@@ -7,7 +7,7 @@
         <div class="quick-links">
           <button :class="{ active: route.path === '/personal/me' }" @click="$router.push('/personal/me')">个人</button>
           <button :class="{ active: route.path.startsWith('/personal/games') }" @click="$router.push('/personal/games')">游戏</button>
-          <button @click="$router.push('/fish')">水产平台</button>
+          <button @click="$router.push('/fish')">水产智诊平台</button>
         </div>
         <button class="back" @click="$router.push('/')">← 返回主入口</button>
         <button v-if="!auth.token" @click="$router.push('/login')">登录</button>

@@ -5,7 +5,7 @@
         <span>交流社区（帖子列表）</span>
         <div class="filters">
           <el-input v-model="q" placeholder="搜索（标题关键词）" style="max-width: 260px" @keyup.enter="load" />
-          <el-button @click="showCreate = true">发帖</el-button>
+          <el-button @click="beginCreate">发帖</el-button>
           <el-button type="primary" @click="load">搜索</el-button>
         </div>
       </div>
@@ -22,8 +22,8 @@
       <el-table-column label="互动" width="240">
         <template #default="{ row }">
           <el-button size="small" @click="openDetail(row.id)">详情/评论</el-button>
-          <el-button size="small" @click="toggleLike(row.id)">点赞 {{ likeCount[row.id] || 0 }}</el-button>
-          <el-button size="small" @click="toggleFav(row.id)">收藏 {{ favCount[row.id] || 0 }}</el-button>
+          <el-button size="small" :type="liked[row.id] ? 'primary' : ''" plain @click="toggleLike(row.id)">{{ liked[row.id] ? '已点赞' : '点赞' }} {{ likeCount[row.id] || 0 }}</el-button>
+          <el-button size="small" :type="favored[row.id] ? 'warning' : ''" plain @click="toggleFav(row.id)">{{ favored[row.id] ? '已收藏' : '收藏' }} {{ favCount[row.id] || 0 }}</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -37,7 +37,7 @@
         :current-page="page + 1"
         :total="total"
         :page-size="size"
-        @current-change="(p) => { page = p - 1; load() }"
+        @current-change="(p: number) => { page = p - 1; load() }"
       />
     </div>
   </el-card>
@@ -62,8 +62,8 @@
       <div class="meta">作者：{{ detail.nickname }} ｜ 发布时间：{{ formatDate(detail.createdAt) }}</div>
       <div class="content">{{ detail.content }}</div>
       <div class="actions">
-        <el-button size="small" @click="toggleLike(detail.id)">点赞 {{ likeCount[detail.id] || 0 }}</el-button>
-        <el-button size="small" @click="toggleFav(detail.id)">收藏 {{ favCount[detail.id] || 0 }}</el-button>
+        <el-button size="small" :type="liked[detail.id] ? 'primary' : ''" plain @click="toggleLike(detail.id)">{{ liked[detail.id] ? '已点赞' : '点赞' }} {{ likeCount[detail.id] || 0 }}</el-button>
+        <el-button size="small" :type="favored[detail.id] ? 'warning' : ''" plain @click="toggleFav(detail.id)">{{ favored[detail.id] ? '已收藏' : '收藏' }} {{ favCount[detail.id] || 0 }}</el-button>
       </div>
       <el-divider />
       <h4>评论区</h4>
@@ -84,11 +84,17 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { http } from '@/utils/http'
+import { useAuthStore } from '@/stores/auth'
+import { ElMessage } from 'element-plus'
 
 type Post = { id: number; title: string; nickname: string; createdAt?: string }
 
 const q = ref('')
+const route = useRoute()
+const router = useRouter()
+const auth = useAuthStore()
 const list = ref<Post[]>([])
 const page = ref(0)
 const size = 10
@@ -100,6 +106,8 @@ const comments = ref<any[]>([])
 const commentText = ref('')
 const likeCount = reactive<Record<number, number>>({})
 const favCount = reactive<Record<number, number>>({})
+const liked = reactive<Record<number, boolean>>({})
+const favored = reactive<Record<number, boolean>>({})
 const createForm = reactive({ title: '', content: '' })
 
 function formatDate(v?: string) {
@@ -112,9 +120,27 @@ async function load() {
   const res = await http.get<any>('/api/posts', { q: q.value || undefined, page: page.value, size })
   list.value = res?.content || []
   total.value = res?.totalElements || 0
+  await loadEngagement()
 }
 
+async function loadEngagement() {
+  const ids = list.value.map((item) => item.id)
+  if (!ids.length) return
+  const states = await http.get<Record<string, { likeCount: number; favoriteCount: number; liked: boolean; favored: boolean }>>('/api/engagement', { targetType: 'POST', targetIds: ids.join(',') })
+  ids.forEach((id) => { const state = states[String(id)]; if (state) { likeCount[id] = state.likeCount; favCount[id] = state.favoriteCount; liked[id] = state.liked; favored[id] = state.favored } })
+}
+
+function requireLogin() {
+  if (auth.token) return true
+  ElMessage.info('登录后即可发帖、评论和参与互动')
+  router.push({ path: '/login', query: { redirect: route.fullPath } })
+  return false
+}
+
+function beginCreate() { if (requireLogin()) showCreate.value = true }
+
 async function submitPost() {
+  if (!requireLogin()) return
   await http.post('/api/posts', createForm)
   createForm.title = ''
   createForm.content = ''
@@ -134,6 +160,7 @@ async function loadComments(postId: number) {
 }
 
 async function submitComment() {
+  if (!requireLogin()) return
   if (!detail.value || !commentText.value.trim()) return
   await http.post(`/api/posts/${detail.value.id}/comments`, { content: commentText.value.trim() })
   commentText.value = ''
@@ -141,16 +168,24 @@ async function submitComment() {
 }
 
 async function toggleLike(postId: number) {
+  if (!requireLogin()) return
   const res = await http.post<any>(`/api/likes?targetType=POST&targetId=${postId}`)
   likeCount[postId] = res?.count || 0
+  liked[postId] = Boolean(res?.liked)
 }
 
 async function toggleFav(postId: number) {
+  if (!requireLogin()) return
   const res = await http.post<any>(`/api/favorites?targetType=POST&targetId=${postId}`)
   favCount[postId] = res?.count || 0
+  favored[postId] = Boolean(res?.favored)
 }
 
-onMounted(load)
+onMounted(async () => {
+  await load()
+  const requestedPost = Number(route.query.post)
+  if (Number.isInteger(requestedPost) && requestedPost > 0) await openDetail(requestedPost)
+})
 </script>
 
 <style scoped>
@@ -198,4 +233,3 @@ onMounted(load)
   margin-top: 14px;
 }
 </style>
-

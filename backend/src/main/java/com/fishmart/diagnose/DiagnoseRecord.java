@@ -32,6 +32,17 @@ public class DiagnoseRecord {
   private String duration; // 发病时长
   private String imageUrl; // 病灶图片
 
+  @Column(length = 16)
+  private String confidence;
+  @Column(columnDefinition = "TEXT")
+  private String evidenceJson;
+  @Column(columnDefinition = "TEXT")
+  private String sourcesJson;
+  @Column(columnDefinition = "TEXT")
+  private String warningsJson;
+  @Column(columnDefinition = "TEXT")
+  private String nextStepsJson;
+
   @Column(nullable = false, updatable = false)
   private Instant createdAt = Instant.now();
 }

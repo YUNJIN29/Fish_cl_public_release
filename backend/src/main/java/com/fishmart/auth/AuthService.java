@@ -1,12 +1,14 @@
 package com.fishmart.auth;
 
 import com.fishmart.auth.dto.AuthResponse;
+import com.fishmart.auth.dto.ChangePasswordRequest;
 import com.fishmart.auth.dto.LoginRequest;
 import com.fishmart.auth.dto.RegisterRequest;
 import com.fishmart.auth.dto.UpdateProfileRequest;
 import com.fishmart.common.BizException;
 import com.fishmart.security.AuthUser;
 import com.fishmart.security.JwtService;
+import com.fishmart.operations.OperationalMetrics;
 import com.fishmart.user.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,12 +23,15 @@ public class AuthService {
   private final RoleRepository roleRepo;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
+  private final OperationalMetrics metrics;
 
-  public AuthService(UserRepository userRepo, RoleRepository roleRepo, PasswordEncoder passwordEncoder, JwtService jwtService) {
+  public AuthService(UserRepository userRepo, RoleRepository roleRepo, PasswordEncoder passwordEncoder,
+                     JwtService jwtService, OperationalMetrics metrics) {
     this.userRepo = userRepo;
     this.roleRepo = roleRepo;
     this.passwordEncoder = passwordEncoder;
     this.jwtService = jwtService;
+    this.metrics = metrics;
   }
 
   @Transactional
@@ -47,14 +52,16 @@ public class AuthService {
   }
 
   public AuthResponse login(LoginRequest req) {
-    User u = userRepo.findByUsername(req.getUsername()).orElseThrow(() -> new BizException("账号或密码错误"));
-    if (u.getStatus() == UserStatus.BANNED) {
-      throw new BizException("账号已被封禁");
+    try {
+      User u = userRepo.findByUsername(req.getUsername()).orElseThrow(() -> new BizException("账号或密码错误"));
+      if (u.getStatus() == UserStatus.BANNED) throw new BizException("账号已被封禁");
+      if (!passwordEncoder.matches(req.getPassword(), u.getPasswordHash())) throw new BizException("账号或密码错误");
+      metrics.login(true);
+      return issueToken(u);
+    } catch (RuntimeException e) {
+      metrics.login(false);
+      throw e;
     }
-    if (!passwordEncoder.matches(req.getPassword(), u.getPasswordHash())) {
-      throw new BizException("账号或密码错误");
-    }
-    return issueToken(u);
   }
 
   public AuthResponse.UserProfile toProfile(User u) {
@@ -92,6 +99,15 @@ public class AuthService {
     if (req.getMainSpecies() != null) u.setMainSpecies(clean(req.getMainSpecies()));
     if (req.getBio() != null) u.setBio(clean(req.getBio()));
     return toProfile(userRepo.save(u));
+  }
+
+  @Transactional
+  public void changePassword(AuthUser principal, ChangePasswordRequest req) {
+    User u = userRepo.findById(principal.getId()).orElseThrow(() -> new BizException("用户不存在"));
+    if (!passwordEncoder.matches(req.getCurrentPassword(), u.getPasswordHash())) throw new BizException("当前密码错误");
+    if (passwordEncoder.matches(req.getNewPassword(), u.getPasswordHash())) throw new BizException("新密码不能与当前密码相同");
+    u.setPasswordHash(passwordEncoder.encode(req.getNewPassword()));
+    userRepo.save(u);
   }
 
   private String clean(String value) {

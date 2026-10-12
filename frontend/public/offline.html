@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#050811" />
+  <title>暂时离线 · Aquatic Lab</title>
+  <style>
+    *{box-sizing:border-box}body{min-height:100vh;margin:0;display:grid;place-items:center;padding:24px;background:#070c18;color:#dce8ff;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}.card{width:min(520px,100%);padding:32px;border:1px solid #1a2a4a;border-radius:18px;background:radial-gradient(circle at 88% 12%,rgba(0,212,255,.14),transparent 35%),#0d1426;box-shadow:0 24px 70px rgba(0,0,0,.35)}small{color:#00d4ff;font:800 11px ui-monospace;letter-spacing:.18em}h1{margin:14px 0 10px;font-size:30px}p{margin:0;color:#8ba4c5;line-height:1.8}.notice{margin-top:18px;padding:12px;border-left:3px solid #9282ff;border-radius:5px;background:rgba(146,130,255,.08);font-size:13px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}button,a{min-height:44px;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #00d4ff;border-radius:9px;background:rgba(0,212,255,.1);color:#56def8;font:700 14px inherit;text-decoration:none;cursor:pointer}a{border-color:#1a2a4a;color:#8ba4c5;background:#101930}@media(max-width:480px){.card{padding:24px}h1{font-size:26px}.actions>*{width:100%}}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <small>OFFLINE MODE</small>
+    <h1>当前网络不可用</h1>
+    <p>已经保存到服务器的诊断、水质和待办数据不会丢失。恢复网络后重新打开页面即可继续。</p>
+    <p class="notice">为保护隐私，本站不会把诊断记录、病灶图片或个人数据保存到离线缓存。</p>
+    <div class="actions"><button type="button" onclick="location.reload()">重新连接</button><a href="/">返回门户</a></div>
+  </main>
+</body>
+</html>

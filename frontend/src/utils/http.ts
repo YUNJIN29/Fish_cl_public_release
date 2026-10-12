@@ -42,7 +42,7 @@ axiosInstance.interceptors.response.use(
 
 export const http = {
   get: <T>(url: string, params?: any) => axiosInstance.get<any, T>(url, { params }),
-  post: <T>(url: string, data?: any) => axiosInstance.post<any, T>(url, data),
+  post: <T>(url: string, data?: any, config?: any) => axiosInstance.post<any, T>(url, data, config),
   put: <T>(url: string, data?: any) => axiosInstance.put<any, T>(url, data),
   patch: <T>(url: string, data?: any) => axiosInstance.patch<any, T>(url, data),
   delete: <T>(url: string) => axiosInstance.delete<any, T>(url),

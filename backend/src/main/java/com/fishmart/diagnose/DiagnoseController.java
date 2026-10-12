@@ -24,6 +24,7 @@ import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 @RequestMapping("/api/diagnose")
@@ -50,19 +52,22 @@ public class DiagnoseController {
   private final UserRepository userRepo;
   private final RagSearchService ragSearchService;
   private final RestTemplate restTemplate;
+  private final ObjectMapper objectMapper;
 
   public DiagnoseController(AppProperties props, 
                             DiseaseRepository diseaseRepo, 
                             ProductRepository productRepo,
                             DiagnoseRecordRepository recordRepo,
                             UserRepository userRepo,
-                            RagSearchService ragSearchService) {
+                            RagSearchService ragSearchService,
+                            ObjectMapper objectMapper) {
     this.props = props;
     this.diseaseRepo = diseaseRepo;
     this.productRepo = productRepo;
     this.recordRepo = recordRepo;
     this.userRepo = userRepo;
     this.ragSearchService = ragSearchService;
+    this.objectMapper = objectMapper;
     
     // 配置 RestTemplate 超时时间
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
@@ -72,7 +77,7 @@ public class DiagnoseController {
   }
 
   @PostMapping
-  public ApiResponse<DiagnoseResponse> diagnose(@RequestBody DiagnoseRequest req,
+  public ApiResponse<DiagnoseResponse> diagnose(@Valid @RequestBody DiagnoseRequest req,
                                                 @AuthenticationPrincipal AuthUser authUser) {
     String baseUrl = props.getAi().getGlm4BaseUrl();
     String apiKey  = props.getAi().getApiKey();
@@ -105,7 +110,7 @@ public class DiagnoseController {
     }
 
     String systemPrompt = """
-        你是一位资深水产养殖与病害专家。
+        你是一位名为“水产智诊平台”的资深水产养殖与病害专家。
         你拥有专业的水产病害知识库支持，能够精准分析各种水产动物的疾病。
         
         """;
@@ -122,7 +127,7 @@ public class DiagnoseController {
       String productInfo = relatedProducts.stream()
           .map(p -> String.format("- %s (ID:%d): %s", p.getName(), p.getId(), p.getDescription()))
           .collect(Collectors.joining("\n"));
-      systemPrompt += "平台用品展示模块中有以下对症用品，请在处理建议中提及它们（只需提及名称，系统会自动生成查看链接）：\n" + productInfo + "\n\n";
+      systemPrompt += "平台水产优选商城中有以下对症药剂，请在处理建议中提及它们（只需提及名称，系统会自动生成购买链接）：\n" + productInfo + "\n\n";
     }
 
     systemPrompt += """
@@ -195,7 +200,7 @@ public class DiagnoseController {
           
           boolean saved = false;
           if (authUser != null) {
-            saveRecord(authUser.getId(), req, content, imageUrl);
+            saveRecord(authUser.getId(), req, content, imageUrl, relatedDiseases, ragReferences);
             saved = true;
           }
 
@@ -224,7 +229,8 @@ public class DiagnoseController {
     return ApiResponse.ok(recordRepo.findByUserIdOrderByCreatedAtDesc(authUser.getId(), pr).map(DiagnoseRecordDto::from));
   }
 
-  private void saveRecord(Long userId, DiagnoseRequest req, String result, String imageUrl) {
+  private void saveRecord(Long userId, DiagnoseRequest req, String result, String imageUrl,
+                          List<Disease> diseases, List<RagDocument> references) {
     User user = userRepo.findById(userId).orElse(null);
     if (user == null) return;
     
@@ -237,7 +243,17 @@ public class DiagnoseController {
     record.setWaterQuality(req.getWaterQuality());
     record.setDuration(req.getDuration());
     record.setImageUrl(imageUrl);
+    record.setConfidence(diseases.isEmpty() ? "LOW" : "MEDIUM");
+    record.setEvidenceJson(toJson(diseases.stream().map(Disease::getName).toList()));
+    record.setSourcesJson(toJson(references.stream().map(RagDocument::getTitle).toList()));
+    record.setWarningsJson(toJson(List.of("结果仅用于学习和辅助判断，严重情况请联系水产技术人员或兽医")));
+    record.setNextStepsJson(toJson(List.of("复查水温、溶氧、pH、氨氮和亚硝酸盐", "记录24至72小时症状变化")));
     recordRepo.save(record);
+  }
+
+  private String toJson(Object value) {
+    try { return objectMapper.writeValueAsString(value); }
+    catch (Exception ignored) { return "[]"; }
   }
 
   private DiagnoseResponse buildFallbackResponse(AuthUser authUser,
@@ -250,7 +266,7 @@ public class DiagnoseController {
     String report = buildFallbackReport(req, relatedDiseases, relatedProducts, ragReferences, reason);
     boolean saved = false;
     if (authUser != null) {
-      saveRecord(authUser.getId(), req, report, imageUrl);
+      saveRecord(authUser.getId(), req, report, imageUrl, relatedDiseases, ragReferences);
       saved = true;
     }
     return new DiagnoseResponse(

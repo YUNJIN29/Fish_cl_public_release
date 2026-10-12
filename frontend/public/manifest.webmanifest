@@ -1,0 +1,27 @@
+{
+  "name": "Aquatic Lab 综合个人门户",
+  "short_name": "Aquatic Lab",
+  "description": "个人主页、游戏实验与水产智诊平台水产知识工具。",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#070c18",
+  "theme_color": "#050811",
+  "lang": "zh-CN",
+  "categories": ["education", "utilities"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    { "name": "养殖待办", "short_name": "待办", "url": "/fish/tasks", "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }] },
+    { "name": "水质日志", "short_name": "水质", "url": "/fish/water-quality", "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }] },
+    { "name": "AI 诊断", "short_name": "诊断", "url": "/fish/diagnose", "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }] }
+  ]
+}

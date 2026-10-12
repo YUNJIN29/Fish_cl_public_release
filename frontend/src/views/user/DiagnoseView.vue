@@ -11,6 +11,8 @@
             </div>
           </template>
 
+          <div class="safety-notice" role="note"><b>辅助判断，不替代现场诊断</b><span>如出现大量死亡、明显浮头、急性水质异常或强传染迹象，请立即增氧、隔离并联系水产技术人员或兽医。</span></div>
+
           <!-- 消息列表 -->
           <div class="chat-messages" ref="msgBox">
             <!-- 欢迎语 -->
@@ -189,22 +191,26 @@
       <el-col v-if="diagnosisResult" :span="24">
         <el-card shadow="never" class="result-actions-card">
           <div class="result-actions">
-            <el-image
+            <ProtectedImage
               v-if="diagnosisResult.imageUrl"
               :src="diagnosisResult.imageUrl"
               fit="cover"
               class="result-thumb"
-              :preview-src-list="[diagnosisResult.imageUrl]"
+              preview
+              alt="本次诊断病灶图片"
             />
             <div>
               <div class="result-actions-title">诊断报告已生成</div>
               <div class="result-actions-sub">
                 {{ diagnosisResult.saved ? '报告已保存到诊断历史。' : '登录后诊断报告会自动保存到个人历史。' }}
-                {{ diagnosisResult.imageUrl ? '病灶图片已归档。' : '' }}可继续查看知识库证据或前往蓝脉优选处理下一步。
+                {{ diagnosisResult.imageUrl ? '病灶图片已归档。' : '' }}可继续查看知识库证据或前往水产优选处理下一步。
               </div>
             </div>
             <div class="result-buttons">
+              <el-button :icon="DocumentCopy" @click="copyCurrentReport">复制报告</el-button>
+              <el-button :icon="Printer" @click="printCurrentReport">打印 / PDF</el-button>
               <el-button :icon="Clock" @click="goHistory">查看历史</el-button>
+              <el-button type="success" :icon="Clock" @click="scheduleDiagnosisFollowUp">安排诊断复查</el-button>
               <el-button :icon="Collection" @click="$router.push('/fish/diseases')">病害知识库</el-button>
               <el-button type="primary" :icon="Goods" @click="$router.push('/fish/products')">推荐商品</el-button>
             </div>
@@ -260,6 +266,17 @@
       <el-col :xs="24" :lg="7">
         <el-card shadow="never" class="tip-card">
           <template #header><span class="tip-title">补充诊断信息 (推荐)</span></template>
+          <div class="water-record-import">
+            <label v-if="recentWaterRecords.length">
+              <span>引用最近水质记录</span>
+              <select v-model.number="selectedWaterRecordId" aria-label="引用最近水质记录" @change="applyWaterRecord">
+                <option :value="0">请选择记录</option>
+                <option v-for="record in recentWaterRecords" :key="record.id" :value="record.id">{{ record.pondName }} · {{ formatWaterRecordDate(record.observedAt) }}</option>
+              </select>
+              <small>选择后会填入水温和水质描述，提交前仍可修改。</small>
+            </label>
+            <div v-else-if="waterRecordsLoaded" class="water-record-empty"><span>还没有可引用的水质记录</span><el-button text size="small" @click="$router.push('/fish/water-quality')">前往记录</el-button></div>
+          </div>
           <el-form label-position="top" size="small">
             <el-form-item label="鱼种类型">
               <el-input v-model="extraInfo.species" placeholder="如：锦鲤、对虾、加州鲈" />
@@ -317,13 +334,17 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, ref, computed } from 'vue'
+import { nextTick, ref, computed, onMounted } from 'vue'
 import { http } from '@/utils/http'
-import { Picture, Guide, Clock, Collection, Goods } from '@element-plus/icons-vue'
-import { useRouter } from 'vue-router'
+import { Picture, Guide, Clock, Collection, Goods, DocumentCopy, Printer } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import ProtectedImage from '@/components/ProtectedImage.vue'
+import { copyDiagnosisReport, printDiagnosisReport } from '@/utils/diagnosisReport'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 
 type Message = {
@@ -364,6 +385,23 @@ type DiagnosisResult = {
   relatedDiseases: RelatedDisease[]
   relatedProducts: RelatedProduct[]
   ragReferences: RagReference[]
+  confidence?: string
+  evidence?: string[]
+  sources?: string[]
+  warnings?: string[]
+  nextSteps?: string[]
+}
+
+type WaterRecord = {
+  id: number
+  pondName: string
+  temperature?: number | null
+  ph?: number | null
+  dissolvedOxygen?: number | null
+  ammonia?: number | null
+  nitrite?: number | null
+  notes?: string | null
+  observedAt: string
 }
 
 const messages = ref<Message[]>([])
@@ -375,6 +413,9 @@ const imagePreview = ref<string | null>(null)
 const imageBase64 = ref<string | null>(null)
 const imageMimeType = ref<string | null>(null)
 const diagnosisResult = ref<DiagnosisResult | null>(null)
+const recentWaterRecords = ref<WaterRecord[]>([])
+const selectedWaterRecordId = ref(0)
+const waterRecordsLoaded = ref(false)
 
 const extraInfo = ref({
   species: '',
@@ -382,6 +423,50 @@ const extraInfo = ref({
   duration: '',
   waterQuality: ''
 })
+
+async function loadRecentWaterRecords() {
+  try {
+    const data = await http.get<any>('/api/water-quality', { page: 0 })
+    recentWaterRecords.value = data.content || []
+    const requestedId = Number(Array.isArray(route.query.waterRecord) ? route.query.waterRecord[0] : route.query.waterRecord)
+    if (Number.isSafeInteger(requestedId) && requestedId > 0) {
+      let requested = recentWaterRecords.value.find(item => item.id === requestedId)
+      if (!requested) {
+        requested = await http.get<WaterRecord>(`/api/water-quality/${requestedId}`)
+        recentWaterRecords.value.unshift(requested)
+      }
+      selectedWaterRecordId.value = requested.id
+      applyWaterRecord()
+    }
+  } catch {
+    recentWaterRecords.value = []
+  } finally {
+    waterRecordsLoaded.value = true
+  }
+}
+
+function applyWaterRecord() {
+  const record = recentWaterRecords.value.find(item => item.id === selectedWaterRecordId.value)
+  if (!record) return
+  if (record.temperature != null) extraInfo.value.temperature = String(record.temperature)
+  const values = [
+    `水体：${record.pondName}`,
+    `测量时间：${formatWaterRecordDate(record.observedAt)}`,
+    record.ph != null ? `pH ${record.ph}` : '',
+    record.dissolvedOxygen != null ? `溶氧 ${record.dissolvedOxygen} mg/L` : '',
+    record.ammonia != null ? `氨氮 ${record.ammonia} mg/L` : '',
+    record.nitrite != null ? `亚硝酸盐 ${record.nitrite} mg/L` : '',
+    record.notes ? `备注：${record.notes}` : '',
+  ].filter(Boolean)
+  extraInfo.value.waterQuality = values.join('；')
+  ElMessage.success('已引用水质记录，请确认后提交诊断')
+}
+
+function formatWaterRecordDate(value: string) {
+  return new Date(value).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+onMounted(loadRecentWaterRecords)
 
 // 智能引导问诊相关数据
 const guideStep = ref(0)
@@ -477,6 +562,7 @@ function resetGuide() {
   selectedInitialSymptom.value = ''
   consultAnswers.value = {}
   extraInfo.value = { species: '', temperature: '', duration: '', waterQuality: '' }
+  selectedWaterRecordId.value = 0
 }
 
 function getQuestionLabel(key: string): string {
@@ -594,6 +680,37 @@ function goHistory() {
   router.push(auth.token ? '/personal/me?tab=history' : '/login?redirect=/personal/me%3Ftab%3Dhistory')
 }
 
+function scheduleDiagnosisFollowUp() {
+  if (!diagnosisResult.value) return
+  const result = diagnosisResult.value
+  const species = extraInfo.value.species.trim()
+  const reportSummary = result.report.replace(/[#*_>\r\n]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 220)
+  const steps = (result.nextSteps || []).slice(0, 3).join('；')
+  const warnings = (result.warnings || []).slice(0, 2).join('；')
+  const notes = [
+    species ? `诊断对象：${species}` : '',
+    reportSummary ? `报告摘要：${reportSummary}` : '',
+    steps ? `建议步骤：${steps}` : '',
+    warnings ? `风险提示：${warnings}` : '',
+  ].filter(Boolean).join('。').slice(0, 500)
+  router.push({
+    path: '/fish/tasks',
+    query: {
+      source: 'diagnosis',
+      title: `复查${species || '本次'}诊断情况`,
+      category: 'MEDICATION',
+      notes,
+    },
+  })
+}
+
+function currentPrintableReport() {
+  const result = diagnosisResult.value!
+  return { report: result.report, ...extraInfo.value, confidence: result.confidence, evidence: result.evidence, sources: result.sources, warnings: result.warnings, nextSteps: result.nextSteps, hasPrivateImage: Boolean(result.imageUrl) }
+}
+async function copyCurrentReport() { if (!diagnosisResult.value) return; await copyDiagnosisReport(currentPrintableReport()); ElMessage.success('诊断报告已复制') }
+function printCurrentReport() { if (diagnosisResult.value && !printDiagnosisReport(currentPrintableReport())) ElMessage.warning('浏览器阻止了打印窗口，请允许本站打开新窗口') }
+
 function openRagSource(item: RagReference) {
   if (item.sourceUrl && /^https?:\/\//.test(item.sourceUrl)) {
     window.open(item.sourceUrl, '_blank', 'noopener,noreferrer')
@@ -702,6 +819,7 @@ async function sendMessage() {
 </script>
 
 <style scoped>
+.safety-notice{display:flex;gap:10px;align-items:flex-start;margin:0 10px 12px;padding:12px 14px;border:1px solid rgba(255,171,64,.35);border-radius:8px;background:rgba(255,171,64,.08);font-size:12px;line-height:1.6}.safety-notice b{white-space:nowrap;color:var(--c-amber)}.safety-notice span{color:var(--c-text-2)}
 .diagnose-wrap { padding-bottom: 20px; }
 
 .result-actions-card {
@@ -1043,4 +1161,5 @@ async function sendMessage() {
     justify-content: flex-end;
   }
 }
+.water-record-import{margin-bottom:14px;padding:11px;border:1px solid var(--c-border);border-radius:8px;background:var(--c-bg-soft)}.water-record-import label{display:grid;gap:6px}.water-record-import label>span{color:var(--c-text-2);font-size:12px;font-weight:700}.water-record-import select{width:100%;min-height:40px;padding:0 9px;border:1px solid var(--c-border);border-radius:7px;background:var(--c-bg-card);color:var(--c-text)}.water-record-import select:focus{outline:2px solid var(--c-cyan-dim);border-color:var(--c-cyan)}.water-record-import small{color:var(--c-text-3);line-height:1.5}.water-record-empty{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--c-text-3);font-size:12px}
 </style>

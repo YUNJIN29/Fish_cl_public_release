@@ -28,11 +28,11 @@
 
       <div class="article-footer">
         <div class="actions">
-          <el-button plain @click="toggleLike">
-            👍 点赞 ({{ likeCount }})
+          <el-button :type="liked ? 'primary' : ''" plain @click="toggleLike">
+            {{ liked ? '👍 已点赞' : '👍 点赞' }} ({{ likeCount }})
           </el-button>
-          <el-button plain @click="toggleFavorite">
-            ⭐ 收藏
+          <el-button :type="favored ? 'warning' : ''" plain @click="toggleFavorite">
+            {{ favored ? '⭐ 已收藏' : '⭐ 收藏' }} ({{ favoriteCount }})
           </el-button>
         </div>
       </div>
@@ -44,8 +44,9 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { http } from '@/utils/http'
+import { useAuthStore } from '@/stores/auth'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -58,9 +59,14 @@ type Article = {
 }
 
 const route = useRoute()
+const router = useRouter()
+const auth = useAuthStore()
 const article = ref<Article | null>(null)
 const loading = ref(true)
 const likeCount = ref(0)
+const favoriteCount = ref(0)
+const liked = ref(false)
+const favored = ref(false)
 
 function formatDate(v?: string) {
   if (!v) return ''
@@ -74,6 +80,9 @@ async function load() {
   try {
     const res = await http.get<Article>(`/api/articles/${id}`)
     article.value = res
+    const engagement = await http.get<Record<string, { likeCount: number; favoriteCount: number; liked: boolean; favored: boolean }>>('/api/engagement', { targetType: 'ARTICLE', targetIds: String(res.id) })
+    const state = engagement[String(res.id)]
+    if (state) { likeCount.value = state.likeCount; favoriteCount.value = state.favoriteCount; liked.value = state.liked; favored.value = state.favored }
   } catch (err) {
     console.error(err)
   } finally {
@@ -82,11 +91,13 @@ async function load() {
 }
 
 async function toggleLike() {
+  if (!auth.token) return goLogin()
   try {
     const res = await http.post<any>(`/api/likes`, null, {
       params: { targetType: 'ARTICLE', targetId: article.value?.id }
     })
     likeCount.value = res.count
+    liked.value = res.liked
     ElMessage.success(res.liked ? '点赞成功' : '已取消点赞')
   } catch (err) {
     ElMessage.error('请先登录')
@@ -94,14 +105,22 @@ async function toggleLike() {
 }
 
 async function toggleFavorite() {
+  if (!auth.token) return goLogin()
   try {
     const res = await http.post<any>(`/api/favorites`, null, {
       params: { targetType: 'ARTICLE', targetId: article.value?.id }
     })
+    favoriteCount.value = res.count
+    favored.value = res.favored
     ElMessage.success(res.favored ? '收藏成功' : '已取消收藏')
   } catch (err) {
     ElMessage.error('请先登录')
   }
+}
+
+function goLogin() {
+  ElMessage.info('登录后即可参与互动')
+  router.push({ path: '/login', query: { redirect: route.fullPath } })
 }
 
 onMounted(load)

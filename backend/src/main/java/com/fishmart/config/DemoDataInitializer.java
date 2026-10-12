@@ -7,14 +7,15 @@ import com.fishmart.user.RoleName;
 import com.fishmart.user.RoleRepository;
 import com.fishmart.user.User;
 import com.fishmart.user.UserRepository;
-import com.fishmart.user.UserStatus;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Component
+@Profile("!prod")
 public class DemoDataInitializer implements CommandLineRunner {
   private final CategoryRepository categoryRepo;
   private final ProductRepository productRepo;
@@ -51,7 +52,7 @@ public class DemoDataInitializer implements CommandLineRunner {
 
   private void cleanupLegacyDemoText() {
     // 强制清理数据库中可能存在的旧版演示文本
-    String professionalDesc = "本产品为演示数据，展示用途、库存、价格和标签等字段，适用于公开版本的功能预览。";
+    String professionalDesc = "本产品经过水产智诊平台平台严格质检，具有高纯度、快吸收、无残留等特点，适用于各种水产养殖环境，有效保障鱼类健康生长。";
     for (Product p : productRepo.findAll()) {
       if (p.getDescription() != null && (p.getDescription().contains("演示商品") || p.getDescription().contains("答辩展示"))) {
         p.setDescription(professionalDesc);
@@ -104,7 +105,7 @@ public class DemoDataInitializer implements CommandLineRunner {
         Product p = makeProduct(
             c,
             name,
-            "本产品为演示数据，展示用途、库存、价格和标签等字段，适用于公开版本的功能预览。",
+            "本产品经过水产智诊平台平台严格质检，具有高纯度、快吸收、无残留等特点，适用于各种水产养殖环境，有效保障鱼类健康生长。",
             1290 + (i % 10) * 300,
             20 + (i % 15),
             pickCover((long) (1000 + i)),
@@ -124,17 +125,17 @@ public class DemoDataInitializer implements CommandLineRunner {
           makeArticle("AI 赋能智慧水产：从传统养殖到智能诊断的跨越", 
               "<h2>一、智慧水产的新篇章</h2><p>随着人工智能技术的飞速发展，传统水产养殖正迎来数字化转型。通过 <strong>AI 智能诊断系统</strong>，养殖户只需通过手机拍摄病鱼照片或描述症状，即可在数秒内获得初步诊断建议。</p>" +
               "<h2>二、智能诊断的核心优势</h2><p>1. <strong>快速响应</strong>：24小时在线，解决专家难找、响应慢的问题。<br>2. <strong>精准识别</strong>：基于深度学习模型，系统能识别数十种常见鱼类病害，准确率不断提升。<br>3. <strong>闭环服务</strong>：不仅提供诊断，还能联动知识图谱给出详细的治疗方案与预防措施。</p>" +
-              "<h2>三、未来展望</h2><p>平台可继续扩展水产健康管理能力，将传感器监测数据与 AI 诊断深度结合，实现从“病后治疗”到“病前预防”的跨越。</p>", pickArticleCover(1)),
+              "<h2>三、未来展望</h2><p>水产平台致力于构建全方位的水产健康管理体系，将传感器监测数据与 AI 诊断深度结合，实现从“病后治疗”到“病前预防”的跨越。</p>", pickArticleCover(1)),
           
           makeArticle("病害知识图谱：如何通过可视化技术追踪疾病传播", 
-              "<h2>一、什么是知识图谱？</h2><p>知识图谱（Knowledge Graph）是一种揭示实体之间复杂关系的语义网络。在水产病害场景中，可以将<strong>病害、症状、治疗药物、发病季节、受灾物种</strong>等实体互联，形成一张可检索的知识网络。</p>" +
+              "<h2>一、什么是知识图谱？</h2><p>知识图谱（Knowledge Graph）是一种揭示实体之间复杂关系的语义网络。在水产平台中，我们将<strong>病害、症状、治疗药物、发病季节、受灾物种</strong>等实体互联，形成了一张庞大的智慧网络。</p>" +
               "<h2>二、图谱在病害防治中的应用</h2><p>通过可视化技术，养殖户可以直观地看到某种病害（如草鱼出血病）关联的多个症状，以及其在不同温度下的爆发概率。这种全局视角有助于及时切断传播链，制定科学的防疫计划。</p>" +
               "<h2>三、多维数据联动</h2><p>我们的图谱集成了大连海洋大学多年的科研数据，支持缩放、拖拽探索，是养殖户和科研人员不可多得的知识宝库。</p>", pickArticleCover(2)),
           
           makeArticle("春季鱼病高发期：关键预防措施与水质调控建议", 
               "<h2>一、春季养殖面临的挑战</h2><p>随着气温回升，水体中的致病菌和寄生虫开始活跃。此时鱼类刚度过漫长的冬季，体质较弱，极易受到感染。</p>" +
               "<h2>二、核心预防策略</h2><p>1. <strong>水质净化</strong>：及时清理池底有机物，适量使用微生物制剂调理水质。<br>2. <strong>营养增强</strong>：换用高品质开口料，适量添加维生素 C 和免疫增强剂，提高鱼类抵抗力。<br>3. <strong>科学投喂</strong>：遵循“四定”原则（定时、定位、定质、定量），避免残饵污染水体。</p>" +
-              "<h2>三、养殖小贴士</h2><p>若发现鱼类出现离群、打转或摄食量骤减，请立即使用首页的<strong>AI 智能诊断</strong>功能进行排查。</p>", pickArticleCover(3)),
+              "<h2>三、水产小贴士</h2><p>若发现鱼类出现离群、打转或摄食量骤减，请立即使用首页的<strong>AI 智能诊断</strong>功能进行排查。</p>", pickArticleCover(3)),
           
           makeArticle("灯科鱼混养指南：构建和谐的微景观生态", 
               "<h2>一、混养的基本原则</h2><p>灯科鱼（如红绿灯、宝莲灯）性格温顺，体型娇小，适合构建色彩斑斓的社区缸。混养时应遵循<strong>体型相近、习性兼容、水质一致</strong>的原则。</p>" +
@@ -155,7 +156,7 @@ public class DemoDataInitializer implements CommandLineRunner {
       for (int i = 1; i <= need; i++) {
         Article a = makeArticle(
             "智慧渔业深度观察：" + (100 + i) + " 号专栏文章",
-            "<p>这是平台演示用的深度科普内容。我们通过资料整理，总结了水产养殖中的典型案例，旨在提供可落地的技术指导。</p>" +
+            "<p>这是水产平台为您精心准备的深度科普内容。我们通过大数据分析，总结了近年来水产养殖中的典型案例，旨在为广大养殖户提供可落地的技术指导。</p>" +
             "<p>本文重点探讨了<strong>水体溶解氧监测</strong>与<strong>自动化投喂系统</strong>的协同工作原理，帮助您在降低人工成本的同时提升产量。</p>",
             pickArticleCover(100 + i)
         );
@@ -164,13 +165,12 @@ public class DemoDataInitializer implements CommandLineRunner {
     }
 
     if (postRepo.count() == 0) {
-      User demo = userRepo.findByUsername("demo-author").orElseGet(() -> {
+      User demo = userRepo.findByUsername("demo").orElseGet(() -> {
         Role userRole = roleRepo.findByName(RoleName.USER).orElseThrow();
         User u = new User();
-        u.setUsername("demo-author");
+        u.setUsername("demo");
         u.setNickname("水产养殖达人");
-        u.setPasswordHash("{noop}disabled-demo-author");
-        u.setStatus(UserStatus.BANNED);
+        u.setPasswordHash("{noop}demo"); // 初始账号
         u.getRoles().add(userRole);
         return userRepo.save(u);
       });

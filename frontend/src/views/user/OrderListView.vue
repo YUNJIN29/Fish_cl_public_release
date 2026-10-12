@@ -38,7 +38,7 @@
         :current-page="page + 1"
         :total="total"
         :page-size="size"
-        @current-change="(p) => { page = p - 1; load() }"
+        @current-change="(p: number) => { page = p - 1; load() }"
       />
     </div>
   </el-card>
@@ -128,4 +128,3 @@ onMounted(load)
   justify-content: flex-end;
 }
 </style>
-
