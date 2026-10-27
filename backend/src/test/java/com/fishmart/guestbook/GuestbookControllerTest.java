@@ -36,17 +36,17 @@ class GuestbookControllerTest {
     assertThat(page.getContent().get(0).status()).isNull();
   }
 
-  @Test void anonymousMessageStartsPendingWithProvidedNickname() {
+  @Test void anonymousMessagePublishesImmediatelyWithDefaultNickname() {
     when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-    var result = new GuestbookController(repository).create(new GuestbookRequest("  路过的人  ", "  你好，Aquatic Lab  ")).getData();
+    var result = new GuestbookController(repository).create(new GuestbookRequest("", "  你好，Aquatic Lab  ")).getData();
 
     ArgumentCaptor<GuestbookMessage> captor = ArgumentCaptor.forClass(GuestbookMessage.class);
     verify(repository).save(captor.capture());
     assertThat(captor.getValue().getContent()).isEqualTo("你好，Aquatic Lab");
-    assertThat(captor.getValue().getAuthorName()).isEqualTo("路过的人");
+    assertThat(captor.getValue().getAuthorName()).isEqualTo("匿名用户");
     assertThat(captor.getValue().getUser()).isNull();
-    assertThat(captor.getValue().getStatus()).isEqualTo(ContentStatus.PENDING);
-    assertThat(result.status()).isEqualTo("PENDING");
+    assertThat(captor.getValue().getStatus()).isEqualTo(ContentStatus.APPROVED);
+    assertThat(result.status()).isEqualTo("APPROVED");
   }
 }

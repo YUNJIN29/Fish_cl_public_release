@@ -15,7 +15,7 @@ import java.time.Instant;
 
 @RestController
 @RequestMapping("/api/admin/guestbook")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("@guestbookManagerGuard.canManage(authentication)")
 public class AdminGuestbookController {
   private final GuestbookRepository repository;
 
@@ -35,13 +35,28 @@ public class AdminGuestbookController {
   @PatchMapping("/{id}")
   @Transactional
   public ApiResponse<GuestbookDto> review(@PathVariable Long id, @Valid @RequestBody GuestbookReviewRequest request) {
-    ContentStatus status = parse(request.status());
-    if (status == ContentStatus.PENDING) throw new BizException("审核结果不能为待审核");
     GuestbookMessage item = repository.findById(id).orElseThrow(() -> new BizException("留言不存在"));
-    item.setStatus(status);
-    item.setAdminReply(request.reply() == null || request.reply().isBlank() ? null : request.reply().trim());
+    if (request.status() != null) {
+      ContentStatus status = parse(request.status());
+      if (status == ContentStatus.PENDING) throw new BizException("审核结果不能为待审核");
+      item.setStatus(status);
+    }
+    if (request.author() != null) item.setAuthorName(request.author().isBlank() ? "匿名用户" : request.author().trim());
+    if (request.content() != null) {
+      if (request.content().isBlank()) throw new BizException("留言内容不能为空");
+      item.setContent(request.content().trim());
+    }
+    if (request.reply() != null) item.setAdminReply(request.reply().isBlank() ? null : request.reply().trim());
     item.setReviewedAt(Instant.now());
     return ApiResponse.ok(GuestbookDto.from(repository.save(item), true));
+  }
+
+  @DeleteMapping("/{id}")
+  @Transactional
+  public ApiResponse<Void> delete(@PathVariable Long id) {
+    if (!repository.existsById(id)) throw new BizException("留言不存在");
+    repository.deleteById(id);
+    return ApiResponse.ok(null);
   }
 
   private ContentStatus parse(String status) {

@@ -31,8 +31,9 @@ public class GuestbookController {
   @Transactional
   public ApiResponse<GuestbookDto> create(@Valid @RequestBody GuestbookRequest request) {
     GuestbookMessage item = new GuestbookMessage();
-    item.setAuthorName(request.author().trim());
+    item.setAuthorName(request.author() == null || request.author().isBlank() ? "匿名用户" : request.author().trim());
     item.setContent(request.content().trim());
+    item.setStatus(ContentStatus.APPROVED);
     return ApiResponse.ok(GuestbookDto.from(repository.save(item), true));
   }
 }

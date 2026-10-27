@@ -6,7 +6,7 @@ test('admin upload management is not exposed to anonymous visitors', async ({ pa
 test('anonymous community write action preserves a return path to login', async ({ page }) => { await page.goto('/fish/posts'); await page.getByRole('button', { name: '发帖' }).click(); await expect(page).toHaveURL((url) => url.pathname === '/login' && url.searchParams.get('redirect') === '/fish/posts') })
 
 test('personal workspace resumes browsing and customizes shortcuts without overflow', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('yunjin:recent-pages', JSON.stringify([{ path: '/fish/diseases', title: '知识库', visitedAt: Date.now() }])))
+  await page.addInitScript(() => localStorage.setItem('aquatic:recent-pages', JSON.stringify([{ path: '/fish/diseases', title: '知识库', visitedAt: Date.now() }])))
   await page.goto('/personal')
   await expect(page.getByRole('button', { name: /继续 病害知识库/ })).toBeVisible()
   await page.getByRole('button', { name: '自定义' }).click()

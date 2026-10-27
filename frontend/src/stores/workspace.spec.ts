@@ -10,11 +10,11 @@ describe('workspace store', () => {
     workspace.load()
     expect(workspace.pinnedPaths).toContain('/profile')
     workspace.togglePin('/fish/rag')
-    expect(JSON.parse(localStorage.getItem('yunjin:pinned-paths') || '[]')).toContain('/fish/rag')
+    expect(JSON.parse(localStorage.getItem('aquatic:pinned-paths') || '[]')).toContain('/fish/rag')
   })
 
   it('offers the latest recognized page as the continuation target', () => {
-    localStorage.setItem('yunjin:recent-pages', JSON.stringify([
+    localStorage.setItem('aquatic:recent-pages', JSON.stringify([
       { path: '/personal', title: '工作台', visitedAt: 3 },
       { path: '/fish/diseases', title: '知识库', visitedAt: 2 },
       { path: '/unknown', title: '未知', visitedAt: 1 },

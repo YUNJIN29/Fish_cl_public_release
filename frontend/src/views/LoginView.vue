@@ -4,7 +4,7 @@
       <template #header>
         <div>
           <div class="title">水产智诊平台账号</div>
-          <div class="sub-title">登录后可保存诊断历史、维护养殖资料和回看报告。</div>
+          <div class="sub-title">登录后可保存诊断历史、维护养殖资料和回看报告；当前设备将保持登录 7 天。</div>
         </div>
       </template>
       <el-tabs v-model="mode" stretch>

@@ -1,5 +1,5 @@
-const SHELL_CACHE = 'yunjin-shell-v2'
-const ASSET_CACHE = 'yunjin-assets-v2'
+const SHELL_CACHE = 'aquatic-shell-v2'
+const ASSET_CACHE = 'aquatic-assets-v2'
 const SHELL_FILES = ['/offline.html', '/manifest.webmanifest', '/favicon.svg']
 
 self.addEventListener('install', event => {

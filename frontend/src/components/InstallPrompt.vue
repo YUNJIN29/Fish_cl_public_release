@@ -15,11 +15,11 @@ const offline = ref(!navigator.onLine)
 
 function onInstallAvailable(event: Event) {
   event.preventDefault()
-  if (localStorage.getItem('yunjin:install-dismissed') !== '1') installEvent.value = event as InstallEvent
+  if (localStorage.getItem('aquatic:install-dismissed') !== '1') installEvent.value = event as InstallEvent
 }
 function onOnline() { offline.value = false }
 function onOffline() { offline.value = true }
-function onInstalled() { installEvent.value = null; localStorage.removeItem('yunjin:install-dismissed') }
+function onInstalled() { installEvent.value = null; localStorage.removeItem('aquatic:install-dismissed') }
 async function install() {
   const event = installEvent.value
   if (!event) return
@@ -27,7 +27,7 @@ async function install() {
   await event.userChoice
   installEvent.value = null
 }
-function dismiss() { installEvent.value = null; localStorage.setItem('yunjin:install-dismissed', '1') }
+function dismiss() { installEvent.value = null; localStorage.setItem('aquatic:install-dismissed', '1') }
 
 onMounted(() => {
   window.addEventListener('beforeinstallprompt', onInstallAvailable)

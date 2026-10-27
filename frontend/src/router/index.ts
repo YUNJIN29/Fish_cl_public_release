@@ -106,11 +106,11 @@ router.afterEach((to) => {
   if (canonical) canonical.href = `https://example.com${to.path === '/' ? '/' : to.path}`
   if (!to.path.startsWith('/admin') && to.name !== 'login') {
     try {
-      const key = 'yunjin:recent-pages'
+      const key = 'aquatic:recent-pages'
       const previous = JSON.parse(localStorage.getItem(key) || '[]') as Array<{ path: string; title: string; visitedAt: number }>
       const current = { path: to.path, title: document.title, visitedAt: Date.now() }
       localStorage.setItem(key, JSON.stringify([current, ...previous.filter((item) => item.path !== to.path)].slice(0, 6)))
-      window.dispatchEvent(new Event('yunjin:recent-pages'))
+      window.dispatchEvent(new Event('aquatic:recent-pages'))
     } catch { /* 浏览器禁用本地存储时不影响导航 */ }
   }
 })

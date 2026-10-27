@@ -16,6 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import java.util.Optional;
 import java.util.Set;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -145,8 +146,9 @@ class AquacultureTaskControllerTest {
     AquacultureTaskController controller=new AquacultureTaskController(tasks,users);
     AuthUser current=new AuthUser(7L,"owner", Set.of(RoleName.USER));
     User owner=new User(); owner.setId(7L);
+    Instant originalDue=Instant.now().plus(2,ChronoUnit.DAYS);
     AquacultureTask item=new AquacultureTask(); item.setId(12L); item.setUser(owner); item.setTitle("检测水质"); item.setCategory("WATER_TEST");
-    item.setPondName("一号池"); item.setDueAt(Instant.parse("2026-10-12T08:00:00Z")); item.setRepeatIntervalDays(7);
+    item.setPondName("一号池"); item.setDueAt(originalDue); item.setRepeatIntervalDays(7);
     when(tasks.findByIdAndUserId(12L,7L)).thenReturn(Optional.of(item));
     when(tasks.save(any())).thenAnswer(invocation->invocation.getArgument(0));
     TaskCompletionRequest request=new TaskCompletionRequest(); request.setCompleted(true);
@@ -156,7 +158,7 @@ class AquacultureTaskControllerTest {
     verify(tasks,times(2)).save(captor.capture());
     AquacultureTask next=captor.getAllValues().get(1);
     assertThat(item.isNextTaskCreated()).isTrue();
-    assertThat(next.getDueAt()).isEqualTo(Instant.parse("2026-10-19T08:00:00Z"));
+    assertThat(next.getDueAt()).isEqualTo(originalDue.plus(7,ChronoUnit.DAYS));
     assertThat(next.getRepeatIntervalDays()).isEqualTo(7);
     assertThat(next.getCompletedAt()).isNull();
     assertThat(response.getMessage()).contains("下一期");

@@ -59,7 +59,7 @@ const recentCommands = computed(() => recent.value
   .slice(0, 3))
 
 function readRecent() {
-  try { recent.value = JSON.parse(localStorage.getItem('yunjin:recent-pages') || '[]') }
+  try { recent.value = JSON.parse(localStorage.getItem('aquatic:recent-pages') || '[]') }
   catch { recent.value = [] }
 }
 async function openPalette() { readRecent(); open.value = true; query.value = ''; await nextTick(); inputEl.value?.focus() }
@@ -70,8 +70,8 @@ function onKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape' && open.value) closePalette()
   if (event.key === 'Enter' && open.value && filteredCommands.value.length === 1) navigate(filteredCommands.value[0].path)
 }
-onMounted(() => { readRecent(); window.addEventListener('keydown', onKeydown); window.addEventListener('yunjin:recent-pages', readRecent) })
-onBeforeUnmount(() => { window.removeEventListener('keydown', onKeydown); window.removeEventListener('yunjin:recent-pages', readRecent) })
+onMounted(() => { readRecent(); window.addEventListener('keydown', onKeydown); window.addEventListener('aquatic:recent-pages', readRecent) })
+onBeforeUnmount(() => { window.removeEventListener('keydown', onKeydown); window.removeEventListener('aquatic:recent-pages', readRecent) })
 </script>
 
 <style scoped>

@@ -67,7 +67,7 @@ import { ElMessage } from 'element-plus'
 import { calculateProductAmount, calculateVolume, formatMass, formatVolume } from '@/utils/dosageCalculator'
 
 type HistoryItem = { id: number; amount: string; volume: string; mode: string; createdAt: string }
-const historyKey = 'yunjin:dosage-calculations'
+const historyKey = 'aquatic:dosage-calculations'
 const volumeMode = ref<'dimensions' | 'direct'>('dimensions')
 const doseMode = ref<'product' | 'active'>('product')
 const length = ref<number | undefined>()

@@ -17,6 +17,18 @@ public class VisitStatsController {
 
   public record VisitSummary(long todayVisitors, long monthVisitors, long totalVisitors) {}
 
+  public record VisitorRanking(String ipAddress, String location, long visitCount) {}
+
+  @GetMapping("/ranking")
+  @org.springframework.security.access.prepost.PreAuthorize("@guestbookManagerGuard.canManage(authentication)")
+  public ApiResponse<java.util.List<VisitorRanking>> ranking(jakarta.servlet.http.HttpServletResponse response) {
+    response.setHeader("Cache-Control", "no-store");
+    LocalDate today = LocalDate.now(ZONE);
+    return ApiResponse.ok(repository.monthlyRanking(today.withDayOfMonth(1), today).stream()
+        .map(row -> new VisitorRanking((String) row[0], row[1] == null ? "未知地区" : (String) row[1], ((Number) row[2]).longValue()))
+        .toList());
+  }
+
   @PostMapping("/track")
   @Transactional
   public ApiResponse<VisitSummary> track(HttpServletRequest request) {

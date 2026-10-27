@@ -8,7 +8,7 @@ export type SiteDestination = {
 }
 
 export const siteDestinations: SiteDestination[] = [
-  { title: '门户首页', description: '从这里浏览全部空间', path: '/', icon: '云', keywords: '首页 门户 home yunjin', category: '个人' },
+  { title: '门户首页', description: '从这里浏览全部空间', path: '/', icon: '云', keywords: '首页 门户 home aquatic', category: '个人' },
   { title: '个人简介', description: '经历、能力与个人定位', path: '/profile', icon: '简', keywords: '个人 简历 简介 经历 求职 resume profile', category: '个人' },
   { title: '项目成果', description: '查看职责、技术选择和项目证明', path: '/profile#projects', icon: '项', keywords: '项目 作品 技术 project portfolio', category: '个人' },
   { title: '荣誉与证书', description: '竞赛、资质与可验证材料', path: '/profile#proofs', icon: '证', keywords: '证书 荣誉 获奖 比赛 proof certificate', category: '个人' },

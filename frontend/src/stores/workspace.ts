@@ -3,8 +3,8 @@ import { defineStore } from 'pinia'
 import { findDestination, siteDestinations } from '@/data/siteDestinations'
 
 export type RecentPage = { path: string; title: string; visitedAt: number }
-const RECENT_KEY = 'yunjin:recent-pages'
-const PINNED_KEY = 'yunjin:pinned-paths'
+const RECENT_KEY = 'aquatic:recent-pages'
+const PINNED_KEY = 'aquatic:pinned-paths'
 const defaultPins = ['/profile', '/personal/games', '/fish/diagnose', '/fish/diseases']
 
 function readList<T>(key: string, fallback: T[]): T[] {
@@ -29,7 +29,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     localStorage.setItem(PINNED_KEY, JSON.stringify(pinnedPaths.value))
   }
   function clearRecent() {
-    recent.value = []; localStorage.removeItem(RECENT_KEY); window.dispatchEvent(new Event('yunjin:recent-pages'))
+    recent.value = []; localStorage.removeItem(RECENT_KEY); window.dispatchEvent(new Event('aquatic:recent-pages'))
   }
   return { recent, pinnedPaths, pinned, recentDestinations, continuePage, load, togglePin, clearRecent }
 })

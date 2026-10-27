@@ -24,7 +24,7 @@ public class AppProperties {
   public static class Jwt {
     private String issuer;
     private String secret;
-    private long accessTokenMinutes = 240;
+    private long accessTokenMinutes = 7 * 24 * 60;
   }
 
   @Data

@@ -1,5 +1,6 @@
 <template>
   <RouterView />
+  <SitePet />
   <CommandPalette />
   <InstallPrompt />
 </template>
@@ -8,6 +9,7 @@
 import { useThemeStore } from '@/stores/theme'
 import CommandPalette from '@/components/CommandPalette.vue'
 import InstallPrompt from '@/components/InstallPrompt.vue'
+import SitePet from '@/components/SitePet.vue'
 // 初始化主题（store 内部 watch 会立即应用）
 useThemeStore()
 </script>
@@ -16,6 +18,8 @@ useThemeStore()
 /* ===== 暗色主题变量（默认 / html.dark） ===== */
 :root,
 html.dark {
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --el-font-family: var(--font-sans);
   --c-bg:        #070c18;
   --c-bg-card:   #0d1426;
   --c-bg-card2:  #101930;
@@ -85,6 +89,7 @@ html:not(.dark) {
 html:not(.dark) body {
   background: #f0f4fa;
   color: #0f1e35;
+  font-family: var(--font-sans);
 }
 
 /* ===== 亮色导航 header ===== */
@@ -240,7 +245,7 @@ html.dark {
 html.dark body {
   background: var(--c-bg);
   color: var(--c-text);
-  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: var(--font-sans);
 }
 
 /* scrollbar */
@@ -444,6 +449,7 @@ html.dark .el-page-header__breadcrumb { color: var(--c-text-2); }
 .portal .ranking{max-width:760px;margin:0 auto 8px;padding:18px 22px;background:#fff;border:1px solid #dbe5f1;border-radius:16px}.portal .ranking-title{text-align:center;margin-bottom:12px}.portal .ranking-title span{font-size:9px;letter-spacing:3px;color:#7667ed}.portal .ranking-title h3{margin:5px 0;font-size:18px}.portal .ranking-list{display:grid;gap:5px}.portal .rank-row{display:grid;grid-template-columns:28px 120px 1fr 65px;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;background:#f7f9fd;font-size:12px}.portal .rank-row>b{color:#7667ed}.portal .rank-row code{color:#37536f}.portal .rank-row span{color:#71869d;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.portal .rank-row strong{text-align:right;color:#087eb4}.portal .ranking-list>p{text-align:center;color:#71869d}@media(max-width:720px){.portal .ranking{padding:15px 10px}.portal .rank-row{grid-template-columns:22px 92px 1fr 52px;gap:5px;padding:7px 5px;font-size:11px}}
 
 /* ===== 通用工具 ===== */
+html, body, #app { min-height: 100%; margin: 0; }
 .gradient-text {
   background: linear-gradient(135deg, var(--c-cyan), var(--c-purple));
   -webkit-background-clip: text;

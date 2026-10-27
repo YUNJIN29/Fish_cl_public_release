@@ -41,7 +41,7 @@ app:
   jwt:
     issuer: "${JWT_ISSUER:aquatic-platform}"
     secret: "${JWT_SECRET:}"
-    accessTokenMinutes: "${JWT_ACCESS_TOKEN_MINUTES:240}"
+    accessTokenMinutes: "${JWT_ACCESS_TOKEN_MINUTES:10080}"
   upload:
     dir: uploads
   private-upload:
